@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Modeling Runners’ Times in the Cherry Blossom Race" />
+<meta property="og:type" content="book" />
+
+
+
+
+
+<meta name="author" content="John Ensley" />
+
+<meta name="date" content="2017-10-18" />
+
+
+<meta name="description" content="Modeling Runners’ Times in the Cherry Blossom Race">
+
+<title>Modeling Runners’ Times in the Cherry Blossom Race</title>
+
+<link href="libs/tufte-css/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#preface">Preface</a></li>
+<li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="scraping.html#scraping"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
+<li><a href="reading-tables-of-race-results-into-r.html#reading-tables-of-race-results-into-r"><span class="toc-section-number">3</span> Reading Tables of Race Results into R</a></li>
+<li><a href="data-cleaning-and-reformatting-variables.html#data-cleaning-and-reformatting-variables"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="reading-tables-of-race-results-into-r" class="section level1">
+<h1><span class="header-section-number">3</span> Reading Tables of Race Results into R</h1>
+<p>Our goal in this section is to transform the raw text tables of race results into data that can be analyzed in R. These tables have been downloaded from the web and stored in files, named <code>1999.txt</code>, …, <code>2012.txt</code> in a directory called <code>men</code> for men and <code>women</code> for women. The task of downloading the Web pages and extracting the tables is addressed in Section <a href="scraping.html#scraping">2</a>.</p>
+<p>Let’s examine these text tables to get a sense of their format. After that we should have a few ideas about how we might extract information contained in these tables into variables for statistical analysis. Figure <a href="scraping.html#fig:menresults">2.1</a> and Figure <a href="scraping.html#fig:womenresults">2.2</a> provide screenshots of two tables as they appear on the Web. By inspection, we see that a call to <code>read.table()</code> will not properly read the text into a data frame because the information, e.g., place and division, are separated by blanks but blanks also appear in the data values, i.e., blanks also occur where they are not being used as variable separators. For example, for the runner’s hometown, we see values of <code>Kenya</code>, <code>Tucson AZ</code>, and <code>Blowing Rock NC</code>. The blanks between the different parts of hometown will confuse <code>read.table()</code>. We confirm this when we try to use <code>read.table()</code> to input the data:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m2012 &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="st">&#39;men/2012.txt&#39;</span>, <span class="dt">skip =</span> <span class="dv">8</span>)</code></pre></div>
+<pre><code>## Error in scan(file = file, what = what, sep = sep, quote = quote, dec = dec, : line 1 did not have 12 elements</code></pre>
+<p>Note that we skipped the first 8 lines of the file because we observed in Figure <a href="scraping.html#fig:menresults">2.1</a> that these belong to the header of the file.</p>
+<p>We need a customized approach to reach this ‘table.’ From the figures, it appears that the variables are formatted to occupy particular positions in each line of text. That is, the runner’s finishing place occupies the first 5 characters, then comes a blank character, the runner’s place in his or her division appears in the next 11 spaces, and so on. While the first 2 columns of the 2011 and 2012 male results line up, we see that the columns are not identical across these tables. Given the changes in formats from year to year, we can extract the values from the tables either by programmatically interpreting the format or by using year-dependent fixed-width formats. We take the first approach here and figure out which column is which by programmatically inspecting the table header. We leave the second approach as an exercise. There you examine all 28 tables, determine the start and end position of each column of interest, and use <code>readr::read_fwf()</code> to input the data into R.</p>
+<p>Rather than view the Web pages to determine the file format, we can get a better sense of the format if we examine the raw text itself. We use <code>read_lines()</code> to read the contents of the file into R, where the return value is a character vector with one string per line of text read. We start by reading the 2012 men’s file with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">els &lt;-<span class="st"> </span><span class="kw">read_lines</span>(<span class="st">&#39;men/2012.txt&#39;</span>)</code></pre></div>
+<p>The first 10 rows of the 2012 men’s table are</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(els, <span class="dv">10</span>)</code></pre></div>
+<pre><code>##  [1] &quot;&quot;                                                                                              
+##  [2] &quot;                 Credit Union Cherry Blossom Ten Mile Run&quot;                                     
+##  [3] &quot;                 Washington, DC     Sunday, April 1, 2012&quot;                                     
+##  [4] &quot;&quot;                                                                                              
+##  [5] &quot;                Official Male Results (Sorted By Net Time)&quot;                                    
+##  [6] &quot;&quot;                                                                                              
+##  [7] &quot;Place Div  /Tot   Num    Name                   Ag Hometown             5 Mile  Time    Pace  &quot;
+##  [8] &quot;===== =========== ====== ====================== == ==================== ======= ======= ===== &quot;
+##  [9] &quot;    1     1/347        9 Allan Kiprono          22 Kenya                  22:32   45:15  4:32 &quot;
+## [10] &quot;    2     2/347       11 Lani Kiplagat          23 Kenya                  22:38   46:28  4:39 &quot;</code></pre>
+<p>We also read in and display the first 10 rows of the 2011 male results so we have another table to compare with the 2012 table. We find the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">els2011 &lt;-<span class="st"> </span><span class="kw">read_lines</span>(<span class="st">&#39;men/2011.txt&#39;</span>)
+<span class="kw">head</span>(els2011, <span class="dv">10</span>)</code></pre></div>
+<pre><code>##  [1] &quot;&quot;                                                                                                      
+##  [2] &quot;                 Credit Union Cherry Blossom Ten Mile Run&quot;                                             
+##  [3] &quot;                 Washington, DC     Sunday, April 3, 2011&quot;                                             
+##  [4] &quot;&quot;                                                                                                      
+##  [5] &quot;                           Official Male Results&quot;                                                      
+##  [6] &quot;&quot;                                                                                                      
+##  [7] &quot;Place Div  /Tot   Num    Name                   Ag Hometown             5 Mile  Gun Tim Net Tim Pace  &quot;
+##  [8] &quot;===== =========== ====== ====================== == ==================== ======= ======= ======= ===== &quot;
+##  [9] &quot;    1     1/401        3 Lelisa Desisa          21 Ethiopia                       45:36   45:36  4:34 &quot;
+## [10] &quot;    2     2/401       13 Allan Kiprono          21 Kenya                  23:08   45:41   45:41  4:35 &quot;</code></pre>
+<p>What do we find with this simple inspection?</p>
+<ul>
+<li>Both of the tables have a header</li>
+<li>The last line of the header is a row of ‘=’ characters, i.e. a separation line.</li>
+<li>There are blanks inserted in the row of ‘=’ characters that mark the start and end of a column of information, e.g. the Pace column occupies 5 spaces.</li>
+<li>The row above the ‘=’ characters gives column names.</li>
+<li>There are two times reported in 2011 (called <code>Gun Tim</code> and <code>Net Tim</code>) and only one time reported in 2012 (<code>Time</code>). The header of the e 2012 file tells us that <code>Time</code> is net time.</li>
+</ul>
+<p>If we examine a few more years of race results, we find other differences between how the data are organized. Some years have column names that are all capitalized; do not include the time at 5 miles; contain a rightmost column that holds some sort of annotation, e.g., #; have headers consisting of 3 lines instead of 8, etc.</p>
+<p>Let’s use the 2012 men’s results as our test case for developing the code to read in all the files. However, we will try to write the code in a general way so that it can potentially be used for all 28 files. Our first step is to find the row with the equal signs. The rows below it contain the data, the row above it holds the column headers, and the row itself supplies the spacings for the columns. We saw earlier that the ‘=’ characters are in the eighth row of the 2012 table. Since the organization of the tables differs a bit from year to year, we use a programmatic search for the equal signs. We use <code>str_which()</code> to search through the character strings in els for one that begins with, say, 3 equal signs as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">eq_idx &lt;-<span class="st"> </span><span class="kw">str_which</span>(els, <span class="st">&#39;^===&#39;</span>)</code></pre></div>
+<p>The choice of 3 ‘=’ characters is somewhat arbitrary. We could have used just one as the equal sign does not appear elsewhere in the document.</p>
+<p>Now that we have located this key row in the table, we extract it and the row above it and discard earlier rows with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">spacer_row &lt;-<span class="st"> </span>els[eq_idx]
+header_row &lt;-<span class="st"> </span>els[eq_idx <span class="op">-</span><span class="st"> </span><span class="dv">1</span>]
+body &lt;-<span class="st"> </span><span class="kw">tail</span>(els, <span class="op">-</span>eq_idx) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="co"># get rid of empty strings too</span>
+<span class="st">  </span><span class="kw">str_subset</span>(<span class="st">&#39;.+&#39;</span>)</code></pre></div>
+<p>Our next task is to extract the various pieces of information from each string in body, i.e., the content of the table. How might we extract the runner’s age? From inspection, a runner’s age appears in the column labeled <code>Ag</code> or <code>AG</code> so we first convert the column names to lower case so we need not search separately for <code>Ag</code> and <code>AG</code>. We use <code>str_to_lower()</code> to do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">header_row &lt;-<span class="st"> </span><span class="kw">str_to_lower</span>(header_row)</code></pre></div>
+<p>We can search through <code>header_row</code> for this two letter sequence as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">age_location &lt;-<span class="st"> </span><span class="kw">str_locate</span>(header_row, <span class="st">&#39;ag&#39;</span>)
+age_location</code></pre></div>
+<pre><code>##      start end
+## [1,]    49  50</code></pre>
+<p>The return value from <code>str_locate()</code> tells us a match was found in position 49 of the character string. Now we have the information about the location of runner’s age: it begins in position 49 and ends at the 50th position in each row of the table. We use this information to extract each runner’s age using <code>str_sub()</code> as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">age &lt;-<span class="st"> </span><span class="kw">str_sub</span>(body, <span class="dt">start =</span> age_location[<span class="dv">1</span>,<span class="dv">1</span>], <span class="dt">end =</span> age_location[<span class="dv">1</span>,<span class="dv">2</span>])
+<span class="kw">head</span>(age)</code></pre></div>
+<pre><code>## [1] &quot;22&quot; &quot;23&quot; &quot;36&quot; &quot;27&quot; &quot;24&quot; &quot;31&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">as.numeric</span>(age))</code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+##    9.00   29.00   35.00   37.75   45.00   89.00       1</code></pre>
+<p>It appears that we have located the runner’s age correctly. The youngest male runner in 2012 was 9 and the oldest was 89, and there was one runner who did not have an age reported.</p>
+<p>We can extract all of our variables in this manner, but the width of a column might change from one year to the next so we generalize our code to search the row of equal signs for blank spaces and use the position of these to determine the locations of the columns. This approach is better than searching for variable names to find the starting position of the column of values. We find the locations of all of the blanks in the line of ‘=’ characters with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">blank_locs &lt;-<span class="st"> </span><span class="kw">str_locate_all</span>(spacer_row, <span class="st">&#39; &#39;</span>)[[<span class="dv">1</span>]][ ,<span class="dv">1</span>]
+blank_locs</code></pre></div>
+<pre><code>## [1]  6 18 25 48 51 72 80 88 94</code></pre>
+<p>Here the function <code>str_locate_all()</code> searches for multiple matches in the string, not just the first match. Blank spaces are found at the 6th, 18th, 25th, 48th, 51st, etc. positions.</p>
+<p>In general, we want to write our code so that it does not depend on a variable name starting or ending in a particular column. We can extract all the columns of values using <code>blank_locs</code> to determine the start and end positions of the columns. The starting position of a column is one character past a blank and the ending position is one character before a blank. In order to properly handle the first column, we can augment <code>blank_locs</code> with 0 so the first column starts one character after 0, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">search_locs &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, blank_locs)</code></pre></div>
+<p>We can extract all the columns with <code>str_sub()</code> by</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">values &lt;-<span class="st"> </span><span class="kw">map</span>(body, str_sub,
+              <span class="dt">start =</span> <span class="kw">head</span>(search_locs, <span class="op">-</span><span class="dv">1</span>) <span class="op">+</span><span class="st"> </span><span class="dv">1</span>,
+              <span class="dt">end =</span> <span class="kw">tail</span>(search_locs, <span class="op">-</span><span class="dv">1</span>) <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)</code></pre></div>
+<p>We encapsulate the task of finding the starting and ending positions of the columns into a function, which we call <code>find_col_locs()</code>. In the function, we safeguard against the last character in the row of ‘=’ characters not being a blank, we add an additional element to the end of the vector of locations that is one character more than the length of the string. Our function appears as:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">find_col_locs &lt;-<span class="st"> </span><span class="cf">function</span>(spacer_row) {
+  space_locs &lt;-<span class="st"> </span><span class="kw">str_locate_all</span>(spacer_row, <span class="st">&#39; &#39;</span>)[[<span class="dv">1</span>]][ ,<span class="dv">1</span>]
+  row_length &lt;-<span class="st"> </span><span class="kw">nchar</span>(spacer_row)
+  
+  <span class="cf">if</span> (<span class="op">!</span><span class="kw">str_detect</span>(spacer_row, <span class="st">&#39; $&#39;</span>)) {
+    <span class="kw">return</span>(<span class="kw">c</span>(<span class="dv">0</span>, space_locs, row_length <span class="op">+</span><span class="st"> </span><span class="dv">1</span>))
+  } <span class="cf">else</span> <span class="kw">return</span>(<span class="kw">c</span>(<span class="dv">0</span>, space_locs))
+}</code></pre></div>
+<p>We can extract all 10 columns of data from the 2012 file, but do we want to keep all of these variables? Do we want to keep the union of all variables across the 14 years? Or, use only a subset? For now, we extract name, age, hometown, and all 3 times, i.e., gun time, net time, and time, and ignore the rest, e.g., place, div, and the 5-mile run time. We encapsulate into a function the code to extract the locations of the desired columns. We need, as inputs to this function, the names of the desired columns, the header row that contains the column names, and the locations of the blanks in the separator row. Our function follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">select_cols &lt;-<span class="st"> </span><span class="cf">function</span>(col_names, header_row, search_locs) {
+  select_col &lt;-<span class="st"> </span><span class="cf">function</span>(name, header_row, search_locs) {
+    start_pos &lt;-<span class="st"> </span><span class="kw">str_locate</span>(header_row, name)[<span class="dv">1</span>,<span class="dv">1</span>]
+    <span class="cf">if</span> (<span class="kw">is.na</span>(start_pos)) <span class="kw">return</span>(<span class="kw">c</span>(<span class="ot">NA</span>, <span class="ot">NA</span>))
+    index &lt;-<span class="st"> </span><span class="kw">sum</span>(start_pos <span class="op">&gt;=</span><span class="st"> </span>search_locs)
+    <span class="kw">c</span>(search_locs[index] <span class="op">+</span><span class="st"> </span><span class="dv">1</span>, search_locs[index <span class="op">+</span><span class="st"> </span><span class="dv">1</span>] <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)
+  }
+  
+  <span class="kw">map</span>(col_names, select_col, 
+      <span class="dt">header_row =</span> header_row, 
+      <span class="dt">search_locs =</span> search_locs) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">do.call</span>(<span class="st">&#39;rbind&#39;</span>, .)
+}</code></pre></div>
+<p>The encapsulation of <code>map()</code> makes it easy for us to test our code on individual column names and extract a subset of columns. For example, we can find the age variable with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">search_locs &lt;-<span class="st"> </span><span class="kw">find_col_locs</span>(spacer_row)
+age_loc &lt;-<span class="st"> </span><span class="kw">select_cols</span>(<span class="st">&#39;ag&#39;</span>, header_row, search_locs)
+ages &lt;-<span class="st"> </span><span class="kw">map_chr</span>(body, str_sub,
+                <span class="dt">start =</span> age_loc[ ,<span class="dv">1</span>],
+                <span class="dt">end =</span> age_loc[ ,<span class="dv">2</span>])
+<span class="kw">summary</span>(<span class="kw">as.numeric</span>(ages))</code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+##    9.00   29.00   35.00   37.75   45.00   89.00       1</code></pre>
+<p>Our more general extraction matches the earlier one.</p>
+<p>Another advantage to creating <code>select_cols()</code> and <code>find_col_locs()</code> is that these functions make our code modular so our code is easier to follow and to modify in the context of the larger data extraction and cleaning process.</p>
+<p>Since the column names vary somewhat from year to year, we use only the first few characters that uniquely identify the desired columns, e.g.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">short_col_names =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;home&quot;</span>, <span class="st">&quot;ag&quot;</span>, <span class="st">&quot;gun&quot;</span>, <span class="st">&quot;net&quot;</span>, <span class="st">&quot;time&quot;</span>)</code></pre></div>
+<p>Also, if a file does not have one of the desired variables, then we want the values for that variable to be <code>NA</code>. We can anticipate this situation because we have seen that the 2011 file has gun time and net time, but not time, and the 2012 file has a column labeled time, but no gun or net times.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">loc_cols &lt;-<span class="st"> </span><span class="kw">select_cols</span>(short_col_names, header_row, search_locs)
+values &lt;-<span class="st"> </span><span class="kw">map</span>(body, str_sub,
+              <span class="dt">start =</span> loc_cols[ ,<span class="dv">1</span>],
+              <span class="dt">end =</span> loc_cols[ ,<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">do.call</span>(<span class="st">&#39;rbind&#39;</span>, .)</code></pre></div>
+<p>Let’s examine the return value. First we check the type of the return value with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">class</span>(values)</code></pre></div>
+<pre><code>## [1] &quot;matrix&quot;</code></pre>
+<p>The results form a matrix of character strings. (We have not yet converted any values such as age to numeric.) We see that the first few rows of the matrix are</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(values) &lt;-<span class="st"> </span>short_col_names
+<span class="kw">head</span>(values)</code></pre></div>
+<pre><code>##      name                     home                   ag   gun net
+## [1,] &quot;Allan Kiprono         &quot; &quot;Kenya               &quot; &quot;22&quot; NA  NA 
+## [2,] &quot;Lani Kiplagat         &quot; &quot;Kenya               &quot; &quot;23&quot; NA  NA 
+## [3,] &quot;John Korir            &quot; &quot;Kenya               &quot; &quot;36&quot; NA  NA 
+## [4,] &quot;Ian Burrell           &quot; &quot;Tucson AZ           &quot; &quot;27&quot; NA  NA 
+## [5,] &quot;Jesse Cherry          &quot; &quot;Blowing Rock NC     &quot; &quot;24&quot; NA  NA 
+## [6,] &quot;Ketema Nugusse        &quot; &quot;Ethiopia            &quot; &quot;31&quot; NA  NA 
+##      time     
+## [1,] &quot;  45:15&quot;
+## [2,] &quot;  46:28&quot;
+## [3,] &quot;  47:33&quot;
+## [4,] &quot;  47:34&quot;
+## [5,] &quot;  47:40&quot;
+## [6,] &quot;  47:50&quot;</code></pre>
+<p>The 2012 table has a column for time and not gun and net times so the gun and net values are NA. We also check the last few lines with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">tail</span>(values)</code></pre></div>
+<pre><code>##         name                     home                   ag   gun net
+## [7188,] &quot;Dana Brown            &quot; &quot;Randallstown MD     &quot; &quot;41&quot; NA  NA 
+## [7189,] &quot;Jurek Grabowski       &quot; &quot;Fairfax VA          &quot; &quot;39&quot; NA  NA 
+## [7190,] &quot;Larry Hume            &quot; &quot;Arlington VA        &quot; &quot;56&quot; NA  NA 
+## [7191,] &quot;Sean-Patrick Alexander&quot; &quot;Alexandria VA       &quot; &quot;35&quot; NA  NA 
+## [7192,] &quot;Joseph White          &quot; &quot;Forestville MD      &quot; &quot;  &quot; NA  NA 
+## [7193,] &quot;Lee Jordan            &quot; &quot;Herndon VA          &quot; &quot;48&quot; NA  NA 
+##         time     
+## [7188,] &quot;2:26:47&quot;
+## [7189,] &quot;2:27:11&quot;
+## [7190,] &quot;2:27:20&quot;
+## [7191,] &quot;2:27:30&quot;
+## [7192,] &quot;2:28:58&quot;
+## [7193,] &quot;2:30:59&quot;</code></pre>
+<p>Here we see the one runner who did not report an age. It appears that we have successfully captured the information from the table in <code>men/2012.txt</code>.</p>
+<p>We wrap up the process of extracting the columns into a function so we can apply it to each year’s data. This function calls our helper functions <code>find_col_locs()</code> and <code>select_cols()</code>. Our function might look like</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">extract_variables &lt;-<span class="st"> </span><span class="cf">function</span>(file, <span class="dt">var_names =</span> <span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;home&quot;</span>, <span class="st">&quot;ag&quot;</span>, <span class="st">&quot;gun&quot;</span>, <span class="st">&quot;net&quot;</span>, <span class="st">&quot;time&quot;</span>)) {
+  <span class="co"># find the index of the row with =s</span>
+  eq_idx &lt;-<span class="st"> </span><span class="kw">str_which</span>(file, <span class="st">&#39;^===&#39;</span>)
+  <span class="co"># extract the two key rows and the data</span>
+  spacer_row &lt;-<span class="st"> </span>file[eq_idx]
+  header_row &lt;-<span class="st"> </span>file[eq_idx <span class="op">-</span><span class="st"> </span><span class="dv">1</span>] <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_to_lower</span>()
+  body &lt;-<span class="st"> </span><span class="kw">tail</span>(file, <span class="op">-</span>eq_idx) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="co"># get rid of empty strings too</span>
+<span class="st">    </span><span class="kw">str_subset</span>(<span class="st">&#39;.+&#39;</span>)
+  
+  <span class="co"># get starting and ending positions of variables</span>
+  search_locs &lt;-<span class="st"> </span><span class="kw">find_col_locs</span>(spacer_row)
+  loc_cols &lt;-<span class="st"> </span><span class="kw">select_cols</span>(var_names, header_row, search_locs)
+  values &lt;-<span class="st"> </span><span class="kw">map</span>(body, str_sub,
+              <span class="dt">start =</span> loc_cols[ ,<span class="dv">1</span>],
+              <span class="dt">end =</span> loc_cols[ ,<span class="dv">2</span>]) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">do.call</span>(<span class="st">&#39;rbind&#39;</span>, .)
+  <span class="kw">colnames</span>(values) &lt;-<span class="st"> </span>var_names
+  <span class="kw">invisible</span>(values)
+}</code></pre></div>
+<p>We are ready to create the data frames for each year, but the <code>extract_variables()</code> function expects the file passed to it for the extraction to be a character vector. We first must read the lines of the tables into R. We do this with:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mfilenames &lt;-<span class="st"> </span><span class="kw">list.files</span>(<span class="st">&#39;men&#39;</span>, <span class="dt">pattern =</span> <span class="st">&#39;.txt$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+men_files &lt;-<span class="st"> </span><span class="kw">map</span>(mfilenames, read_lines)
+<span class="kw">names</span>(men_files) &lt;-<span class="st"> </span><span class="kw">str_match</span>(mfilenames, <span class="st">&#39;men/(.*).txt&#39;</span>)[ ,<span class="dv">2</span>]</code></pre></div>
+<p>Similarly, we can read the women’s results into <code>women_files</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">wfilenames &lt;-<span class="st"> </span><span class="kw">list.files</span>(<span class="st">&#39;women&#39;</span>, <span class="dt">pattern =</span> <span class="st">&#39;.txt$&#39;</span>, <span class="dt">full.names =</span> <span class="ot">TRUE</span>)
+women_files &lt;-<span class="st"> </span><span class="kw">map</span>(wfilenames, read_lines)
+<span class="kw">names</span>(women_files) &lt;-<span class="st"> </span><span class="kw">str_match</span>(wfilenames, <span class="st">&#39;women/(.*).txt&#39;</span>)[ ,<span class="dv">2</span>]</code></pre></div>
+<p>These two objects, <code>men_files</code> and <code>women_files</code>, are lists where each list contains 14 character vectors, one for each year. Each of these character vectors contains one string for every row in the corresponding file.</p>
+<p>We can now apply the <code>extract_variables()</code> function to <code>men_files</code> and <code>women_files</code> to obtain a list of character matrices. We do this for the men’s list with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_res_mat &lt;-<span class="st"> </span><span class="kw">map</span>(men_files, extract_variables)
+<span class="kw">length</span>(men_res_mat)</code></pre></div>
+<pre><code>## [1] 14</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">map_int</span>(men_res_mat, nrow)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 3190 3017 3589 3724 3948 4156 4327 5237 5276 5905 6651 6911 7011 7193</code></pre>
+<p>and for the women’s list with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">women_res_mat &lt;-<span class="st"> </span><span class="kw">map</span>(women_files, extract_variables)</code></pre></div>
+<pre><code>## Error: length(n) == 1L is not TRUE</code></pre>
+<p>Unfortunately, there is a problem with one of the women’s files. In 2001, the separator row of ‘=’ characters does not exist!</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(women_files<span class="op">$</span><span class="st">`</span><span class="dt">2001</span><span class="st">`</span>)</code></pre></div>
+<pre><code>## [1] &quot;&quot;                                                                        
+## [2] &quot;                                                                 &quot;       
+## [3] &quot;                      &quot;                                                  
+## [4] &quot;    1  6002 Elana MEYER           34 Rep Of S.africa      52:15   52:16#&quot;
+## [5] &quot;    2  6004 Lydia GRIGORIEVA      27 Russia               53:12   53:15#&quot;
+## [6] &quot;    3  6019 Eyerusalem KUMA       20 Ethiopia             53:16   53:19#&quot;</code></pre>
+<p>It looks as though the women’s file shares the same header as the men’s 2001 file. The men’s file did load correctly, so I will cheat a little bit and manually parse the women’s file with the header information from the men’s file.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_file_<span class="dv">2001</span> &lt;-<span class="st"> </span>men_files<span class="op">$</span><span class="st">`</span><span class="dt">2001</span><span class="st">`</span>
+women_file_<span class="dv">2001</span> &lt;-<span class="st"> </span>women_files<span class="op">$</span><span class="st">`</span><span class="dt">2001</span><span class="st">`</span>
+
+eq_idx_<span class="dv">2001</span> &lt;-<span class="st"> </span><span class="kw">str_which</span>(men_file_<span class="dv">2001</span>, <span class="st">&#39;^===&#39;</span>)
+spacer_row_<span class="dv">2001</span> &lt;-<span class="st"> </span>men_file_<span class="dv">2001</span>[eq_idx_<span class="dv">2001</span>]
+header_row_<span class="dv">2001</span> &lt;-<span class="st"> </span>men_file_<span class="dv">2001</span>[eq_idx_<span class="dv">2001</span> <span class="op">-</span><span class="st"> </span><span class="dv">1</span>] <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">str_to_lower</span>()
+
+women_files<span class="op">$</span><span class="st">`</span><span class="dt">2001</span><span class="st">`</span>[<span class="dv">2</span>] &lt;-<span class="st"> </span>header_row_<span class="dv">2001</span>
+women_files<span class="op">$</span><span class="st">`</span><span class="dt">2001</span><span class="st">`</span>[<span class="dv">3</span>] &lt;-<span class="st"> </span>spacer_row_<span class="dv">2001</span></code></pre></div>
+<p>Let’s try parsing the women’s files again.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">women_res_mat &lt;-<span class="st"> </span><span class="kw">map</span>(women_files, extract_variables)
+<span class="kw">length</span>(women_res_mat)</code></pre></div>
+<pre><code>## [1] 14</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">map_int</span>(women_res_mat, nrow)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 2356 2167 2973 3335 3544 3899 4334 5437 5692 6397 8325 8855 9030 9730</code></pre>
+<p>We see that we get reasonable values for the number of rows in our matrices. Our next task is then to convert these character matrices into a format that we can readily analyze. As we do this, we use statistics to check the results and find that additional data cleaning is necessary. This is the topic of the next chapter.</p>
+
+</div>
+<p style="text-align: center;">
+<a href="scraping.html"><button class="btn btn-default">Previous</button></a>
+<a href="data-cleaning-and-reformatting-variables.html"><button class="btn btn-default">Next</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

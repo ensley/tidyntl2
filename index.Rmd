@@ -1,0 +1,37 @@
+---
+title: "Modeling Runners’ Times in the Cherry Blossom Race"
+subtitle: "Chapter 2, Nolan & Temple Lang"
+author: "John Ensley"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+output:
+  bookdown::tufte_html_book:
+    toc: yes
+    css: toc.css
+    toc_depth: 1
+    split_by: chapter
+    fig_caption: true
+  tufte::tufte_html:
+    fig_caption: true
+bibliography: ["references.bib"]
+link-citations: yes
+---
+
+```{r setup, include=FALSE}
+library(tufte)
+library(tidyverse)
+library(rvest)
+library(xml2)
+library(RColorBrewer)
+library(ggthemes)
+theme_set(theme_few())
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = TRUE,
+                      cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+```
+
+# Preface {-}
+
+This is a case study from Chapter 1 of _Data Science in R_ [@Nolan:2015:DSR:2821191]. Most of the words in the following chapters are not my own. My goal is to follow along with the case study, using tools from the [tidyverse](tidyverse.org) instead of the base R that is used in _Data Science in R_. That is not to say that the tidyverse is necessarily better than base R; I just prefer it for data cleaning, manipulation, and visualization. Any work done in the "Exercises" section is entirely my own.

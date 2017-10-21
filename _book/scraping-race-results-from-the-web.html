@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Modeling Runners’ Times in the Cherry Blossom Race" />
+<meta property="og:type" content="book" />
+
+
+
+
+
+<meta name="author" content="John Ensley" />
+
+<meta name="date" content="2017-10-18" />
+
+
+<meta name="description" content="Modeling Runners’ Times in the Cherry Blossom Race">
+
+<title>Modeling Runners’ Times in the Cherry Blossom Race</title>
+
+<link href="libs/tufte-css/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#preface">Preface</a></li>
+<li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="scraping-race-results-from-the-web.html#scraping-race-results-from-the-web"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="scraping-race-results-from-the-web" class="section level1">
+<h1><span class="header-section-number">2</span> Scraping Race Results from the Web</h1>
+<p>The race results for the Cherry Blossom Ten Mile Run are available at <a href="http://www.cherryblossom.org" class="uri">http://www.cherryblossom.org</a>. The results for men in, e.g., 2012, are displayed in the screen shot in Figure <a href="scraping-race-results-from-the-web.html#fig:menresults">2.1</a>. We see that the data are simply formatted in what appears to be a block of plain text arranged in fixed-width columns. We can examine the source code for the Web page to check if this is the case. We do this in, e.g., a Google Chrome browser by clicking on View -&gt; Developer -&gt; View Source. When we do this we see that the table itself contains no HTML markup, and it has been inserted into a <code>&lt;pre&gt;</code> node within the document. It should be very easy to extract this “table” from the HTML for further processing.</p>
+<div class="figure"><span id="fig:menresults"></span>
+<p class="caption marginnote shownote">
+Figure 2.1: Screen Shot of the Source for Men’s 2012 Cherry Blossom Results. This screen shot is of the HTML source for the male results for the 2012 Cherry Blossom road race. While the format is not quite the same as the female results for 2011, both are plain text tables within <code>&lt;pre&gt;</code> nodes in an HTML document.
+</p>
+<img src="2012m.png" alt="Screen Shot of the Source for Men’s 2012 Cherry Blossom Results. This screen shot is of the HTML source for the male results for the 2012 Cherry Blossom road race. While the format is not quite the same as the female results for 2011, both are plain text tables within `&lt;pre&gt;` nodes in an HTML document." width="380"  />
+</div>
+<p>We examine one more year to ascertain if the format is the same. When we view the source for the page of 2011 women’s results, we see that the basic format is the same. A screen shot of the source for 2011 female results appears in Figure <a href="scraping-race-results-from-the-web.html#fig:womenresults">2.2</a>. However, the columns are not identical. In 2011, a net time is reported as well as a time. And, following the pace column there is a column labeled <code>S</code>, which has an exclamation mark for the first few runners and nothing for the rest. Our task here is simply to extract the text table so we need only locate the table and extract it as a block of text. The functions in Section 2.3 take care of turning the columns of information into variables.</p>
+<div class="figure"><span id="fig:womenresults"></span>
+<p class="caption marginnote shownote">
+Figure 2.2: Screen Shot of the Source for Women’s 2011 Cherry Blossom Results. This screen shot is of the HTML source for the female results for the 2011 Cherry Blossom road race. Notice that times given are for the midpoint of the race (5 Mile) and for two finish times (<code>Time</code> and <code>Net Tim</code>). Also notice the rightmost column labeled <code>S</code>. While the format is different than the male results for 2012, both are plain text tables within <code>&lt;pre&gt;</code> nodes in an HTML document.
+</p>
+<img src="2011f.png" alt="Screen Shot of the Source for Women’s 2011 Cherry Blossom Results. This screen shot is of the HTML source for the female results for the 2011 Cherry Blossom road race. Notice that times given are for the midpoint of the race (5 Mile) and for two finish times (`Time` and `Net Tim`). Also notice the rightmost column labeled `S`. While the format is different than the male results for 2012, both are plain text tables within `&lt;pre&gt;` nodes in an HTML document." width="412"  />
+</div>
+<p>We use the <code>read_html()</code> function in the <code>rvest</code> package to scrape the 2012 men’s page from the site.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ubase &lt;-<span class="st"> &#39;http://cherryblossom.org/&#39;</span>
+url &lt;-<span class="st"> </span><span class="kw">paste0</span>(ubase, <span class="st">&#39;results/2012/2012cucb10m-m.htm&#39;</span>)
+doc &lt;-<span class="st"> </span><span class="kw">read_html</span>(url)</code></pre></div>
+<p>We saw from the HTML source that we want to extract the text content of the <code>&lt;pre&gt;</code> node. We can access all <code>&lt;pre&gt;</code> nodes in the document with the CSS selector <code>pre</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pre_node &lt;-<span class="st"> </span><span class="kw">html_nodes</span>(doc, <span class="st">&#39;pre&#39;</span>)</code></pre></div>
+<p>The <code>html_nodes()</code> function a list where each element corresponds to one of the <code>&lt;pre&gt;</code> nodes in the document. In our case, there is only one such node. Next, we use the <code>html_text()</code> function to extract the text content from this node as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">txt &lt;-<span class="st"> </span><span class="kw">html_text</span>(pre_node)</code></pre></div>
+<p>Let’s examine the contents of <code>txt</code>. We first determine how many characters it contains and then examine the start and end. We do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nchar</span>(txt)</code></pre></div>
+<pre><code>## [1] 690904</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_sub</span>(txt, <span class="dv">1</span>, <span class="dv">50</span>)</code></pre></div>
+<pre><code>## [1] &quot;\r\n                 Credit Union Cherry Blossom Ten&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_sub</span>(txt, <span class="kw">nchar</span>(txt) <span class="op">-</span><span class="st"> </span><span class="dv">50</span>, <span class="kw">nchar</span>(txt))</code></pre></div>
+<pre><code>## [1] &quot;   48 Herndon VA           1:09:06 2:30:59 15:06 \r\n&quot;</code></pre>
+<p>It appears that we have successfully extracted the information from the web page. We also see that the individual lines end with <code>\r\n</code>. We can use these characters to split up the 690904 characters into separate strings corresponding to lines in the table. That is,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">els &lt;-<span class="st"> </span><span class="kw">str_split</span>(txt, <span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>)[[<span class="dv">1</span>]]</code></pre></div>
+<p>Now we have 7202 lines of information, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(els)</code></pre></div>
+<pre><code>## [1] 7202</code></pre>
+<p>The first few of these contain the header information, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(els, <span class="dv">3</span>)</code></pre></div>
+<pre><code>## [1] &quot;&quot;                                                         
+## [2] &quot;                 Credit Union Cherry Blossom Ten Mile Run&quot;
+## [3] &quot;                 Washington, DC     Sunday, April 1, 2012&quot;</code></pre>
+<p>and the last line is actually blank, but the line before that contains information for one of the runners:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">tail</span>(els, <span class="dv">3</span>)</code></pre></div>
+<pre><code>## [1] &quot; 7192              22280 Joseph White              Forestville MD       1:10:04 2:28:58 14:54 &quot;
+## [2] &quot; 7193   648/648     6555 Lee Jordan             48 Herndon VA           1:09:06 2:30:59 15:06 &quot;
+## [3] &quot;&quot;</code></pre>
+<p>We have succeeded in extracting the rows of the table as elements of a character vector.</p>
+<p>Let’s formalize our code into a function that we can apply to each of the 28 Web pages (a page for each of the men’s and women’s races from 1999 to 2012). We want our function to take as input the URL for the Web page and return a character vector with one element per line, including the header lines and the rows in the table of results. We arrange our previous code into a function as</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">extract_res_table &lt;-<span class="st"> </span><span class="cf">function</span>(url) {
+  <span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(<span class="st">&#39;pre&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+}</code></pre></div>
+<p>Let’s try our function with the 2012 men’s results.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m2012 &lt;-<span class="st"> </span><span class="kw">extract_res_table</span>(url)
+<span class="kw">identical</span>(m2012, els)</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<p>Our function has extracted the same results as before. Let’s now apply it to all of the men’s results across the years.</p>
+<p>It turns out that the URL pattern is not consistent for all the years. The correct URLs are as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_urls &lt;-<span class="st"> </span><span class="kw">c</span>(
+  <span class="st">&#39;results/1999/cb99m.html&#39;</span>,
+  <span class="st">&#39;results/2000/Cb003m.htm&#39;</span>,
+  <span class="st">&#39;results/2001/oof_m.html&#39;</span>,
+  <span class="st">&#39;results/2002/oofm.htm&#39;</span>,
+  <span class="st">&#39;results/2003/CB03-M.HTM&#39;</span>,
+  <span class="st">&#39;results/2004/men.htm&#39;</span>,
+  <span class="st">&#39;results/2005/CB05-M.htm&#39;</span>,
+  <span class="st">&#39;results/2006/men.htm&#39;</span>,
+  <span class="st">&#39;results/2007/men.htm&#39;</span>,
+  <span class="st">&#39;results/2008/men.htm&#39;</span>,
+  <span class="st">&#39;results/2009/09cucb-M.htm&#39;</span>,
+  <span class="st">&#39;results/2010/2010cucb10m-m.htm&#39;</span>,
+  <span class="st">&#39;results/2011/2011cucb10m-m.htm&#39;</span>,
+  <span class="st">&#39;results/2012/2012cucb10m-m.htm&#39;</span>
+)</code></pre></div>
+<p>We now construct the <code>urls</code> vector so that it contains the proper web addresses. We paste the URLs together with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_urls &lt;-<span class="st"> </span><span class="kw">paste0</span>(ubase, men_urls)
+<span class="kw">head</span>(men_urls, <span class="dv">3</span>)</code></pre></div>
+<pre><code>## [1] &quot;http://cherryblossom.org/results/1999/cb99m.html&quot;
+## [2] &quot;http://cherryblossom.org/results/2000/Cb003m.htm&quot;
+## [3] &quot;http://cherryblossom.org/results/2001/oof_m.html&quot;</code></pre>
+<p>Let’s try reading the results into R.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_tables &lt;-<span class="st"> </span><span class="kw">map</span>(men_urls, extract_res_table)</code></pre></div>
+<p>We receive no error messages. Of course, simply because we didn’t run into any errors, does not mean that we have properly extracted the data. We need to check the results to see if they contain the information expected.</p>
+<p>Let’s first check the length of each of the character vectors. From the web site we have seen that several thousand runners compete each year so we expect several thousand elements in our vectors.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">map_int</span>(men_tables, length)</code></pre></div>
+<pre><code>##  [1]    1    2 3628 3728 3952 4165 4336 5245 5284 5913    1 6920 7020 7202</code></pre>
+<p>Hmm, the 1999, 2000 and 2009 extractions resulted in vectors with just one or two elements.</p>
+<p>The file names for these three years are correct to this requires digging deeper. Let’s look at 1999 first.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_sub</span>(men_tables[[<span class="dv">1</span>]], <span class="dv">1</span>, <span class="dv">200</span>)</code></pre></div>
+<pre><code>## [1] &quot;\nPLACE DIV /TOT  NAME                  AG HOMETOWN           TIME    PACE  \n===== ========= ===================== == ================== ======= ===== \n    1    1/1584 Worku Bikila          28 Ethiopia&quot;</code></pre>
+<p>It looks like the line separators in this file are <code>\n</code> characters, not <code>\r\n</code>. This is easy enough to fix.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_tables[[<span class="dv">1</span>]] &lt;-<span class="st"> </span><span class="kw">str_split</span>(men_tables[[<span class="dv">1</span>]], <span class="st">&#39;</span><span class="ch">\\</span><span class="st">n&#39;</span>)[[<span class="dv">1</span>]]
+<span class="kw">map_int</span>(men_tables, length)</code></pre></div>
+<pre><code>##  [1] 3194    2 3628 3728 3952 4165 4336 5245 5284 5913    1 6920 7020 7202</code></pre>
+<p>We view the source of the 2000 web page to see if it is formatted as expected. Below are the first few lines of the 2000 document, indented for better readability.</p>
+<pre><code>&lt;html&gt;
+&lt;body bgcolor=&quot;#CCFFFF&quot;&gt;
+ &lt;p align=&quot;center&quot;&gt;
+  &lt;font color=&quot;#800000&quot; size=&quot;4&quot; face=&quot;Arial&quot;&gt;
+    &lt;strong&gt;
+Nortel Networks Cherry Blossom 10mile Road Race&lt;br&gt;
+Washington, DC *** April 9, 2000
+    &lt;/strong&gt;
+  &lt;/font&gt;
+  &lt;strong&gt;
+    &lt;font color=&quot;#800000&quot; face=&quot;Arial&quot;&gt;
+      &lt;br&gt;
+      &lt;h3 align=&quot;center&quot;&gt;
+        &lt;font color=&quot;#800000&quot; face=&quot;Arial&quot;&gt;
+Official Results, MEN *** Gun Time Is The Official Time
+        &lt;/font&gt;
+      &lt;/h3&gt;
+    &lt;BR&gt;
+    &lt;PRE&gt;
+      &lt;Strong&gt;
+        &lt;/font&gt;
+        &lt;font color=&quot;#800000&quot; face=&quot;Courier New&quot;&gt;
+PLACE DIV /TOT  NUM   NAME                  AG ...
+===== ========= ===== ===================== == ...</code></pre>
+<p>This document is not well-formed HTML. The <code>read_html()</code> function can fix many problems with malformed documents, but it can only do so much. Notice that the <code>&lt;font&gt;</code> and <code>&lt;h3&gt;</code> tags are not properly nested, and similarly the closing <code>&lt;/font&gt;</code> tag that appears after the <code>&lt;pre&gt;</code> tag is problematic. If <code>read_html()</code> closes the <code>&lt;pre&gt;</code> tag so that the tags in the document are properly nested, then the <code>&lt;pre&gt;</code> node does not contain the table of race results.</p>
+<p>We can programmatically edit the HTML so that it is well formed. Alternatively, we can try another CSS expression for locating the content for this particular file. We proceed with the second of these options and leave the first as an exercise.</p>
+<p>If we want to handle one of the years differently than the others, then we need a way to distinguish between the two approaches. One way to do this might be to add a second argument to the function definition that indicates with which year we are working. Then our code can check the year, and if it is 2000, we can extract the table of results differently. We supply a default value to year so that if we don’t specify this argument then the function carries out the default extraction. We provide a modified <code>extract_res_table()</code> to do this:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">extract_res_table &lt;-<span class="st"> </span><span class="cf">function</span>(url, <span class="dt">year =</span> <span class="dv">2001</span>) {
+  <span class="co"># handle weird cases</span>
+  <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>) {
+    <span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(<span class="st">&#39;pre&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">n&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+  } <span class="cf">else</span> <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2000</span>) {
+    <span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(<span class="st">&#39;font&#39;</span>) <span class="op">%&gt;%</span>
+<span class="st">    </span>.[[<span class="dv">4</span>]] <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+  } <span class="cf">else</span> {
+    <span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(<span class="st">&#39;pre&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+  }
+}</code></pre></div>
+<p>Since we now have two arguments to our function, we use <code>map2()</code> to call <code>extract_res_table()</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">years &lt;-<span class="st"> </span><span class="dv">1999</span><span class="op">:</span><span class="dv">2012</span>
+men_tables &lt;-<span class="st"> </span><span class="kw">map2</span>(men_urls, years, extract_res_table)
+<span class="kw">names</span>(men_tables) &lt;-<span class="st"> </span>years
+<span class="kw">map_int</span>(men_tables, length)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 3194 3019 3628 3728 3952 4165 4336 5245 5284 5913    1 6920 7020 7202</code></pre>
+<p>We have cleared up the problems with 1999 and 2000, but the problem with 2009 remains. It turns out that rather than putting all the data in one <code>&lt;pre&gt;</code> tag, each line is contained in a separate <code>&lt;pre&gt;</code> tag. This means that splitting the string on newline characters is unnecessary. Here is the final modified <code>extract_res_table()</code> function.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">extract_res_table &lt;-<span class="st"> </span><span class="cf">function</span>(url, <span class="dt">year =</span> <span class="dv">2001</span>) {
+  selector &lt;-<span class="st"> </span><span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2000</span>) <span class="st">&#39;font&#39;</span> <span class="cf">else</span> <span class="st">&#39;pre&#39;</span>
+  regexp &lt;-<span class="st"> </span><span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>) <span class="st">&#39;</span><span class="ch">\\</span><span class="st">n&#39;</span> <span class="cf">else</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>
+  
+  result &lt;-<span class="st"> </span><span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(selector)
+  
+  <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2000</span>) result &lt;-<span class="st"> </span>result[[<span class="dv">4</span>]]
+  
+  result &lt;-<span class="st"> </span>result <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>()
+  
+  <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2009</span>) <span class="kw">return</span>(result)
+  
+  result <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(regexp) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+}</code></pre></div>
+<p>Let’s try it one more time.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_tables &lt;-<span class="st"> </span><span class="kw">map2</span>(men_urls, years, extract_res_table)
+<span class="kw">names</span>(men_tables) &lt;-<span class="st"> </span>years
+<span class="kw">map_int</span>(men_tables, length)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 3194 3019 3628 3728 3952 4165 4336 5245 5284 5913 6659 6920 7020 7202</code></pre>
+<p>Now that we have the function working for the Web pages of men’s results, we can try it on the women’s pages.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">women_urls &lt;-<span class="st"> </span><span class="kw">c</span>(
+  <span class="st">&#39;results/1999/cb99f.html&#39;</span>,
+  <span class="st">&#39;results/2000/Cb003f.htm&#39;</span>,
+  <span class="st">&#39;results/2001/oof_f.html&#39;</span>,
+  <span class="st">&#39;results/2002/ooff.htm&#39;</span>,
+  <span class="st">&#39;results/2003/CB03-F.HTM&#39;</span>,
+  <span class="st">&#39;results/2004/women.htm&#39;</span>,
+  <span class="st">&#39;results/2005/CB05-F.htm&#39;</span>,
+  <span class="st">&#39;results/2006/women.htm&#39;</span>,
+  <span class="st">&#39;results/2007/women.htm&#39;</span>,
+  <span class="st">&#39;results/2008/women.htm&#39;</span>,
+  <span class="st">&#39;results/2009/09cucb-F.htm&#39;</span>,
+  <span class="st">&#39;results/2010/2010cucb10m-f.htm&#39;</span>,
+  <span class="st">&#39;results/2011/2011cucb10m-f.htm&#39;</span>,
+  <span class="st">&#39;results/2012/2012cucb10m-f.htm&#39;</span>
+)
+
+women_urls &lt;-<span class="st"> </span><span class="kw">paste0</span>(ubase, women_urls)
+women_tables &lt;-<span class="st"> </span><span class="kw">map2</span>(women_urls, years, extract_res_table)
+<span class="kw">names</span>(women_tables) &lt;-<span class="st"> </span>years
+<span class="kw">map_int</span>(women_tables, length)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 2360 2169 2976 3339 3548 3907 4343 5445 5700 6406    1 8864 9039 9739</code></pre>
+<p>Everything worked except for 2009. It turns out that the HTML for the women’s 2009 page is properly formed, and so we don’t need the special case that we created for the men’s. We’ll modify our <code>extract_res_table()</code> function one more time.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">extract_res_table &lt;-<span class="st"> </span><span class="cf">function</span>(url, <span class="dt">year =</span> <span class="dv">2001</span>, <span class="dt">female =</span> <span class="ot">TRUE</span>) {
+  selector &lt;-<span class="st"> </span><span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2000</span>) <span class="st">&#39;font&#39;</span> <span class="cf">else</span> <span class="st">&#39;pre&#39;</span>
+  regexp &lt;-<span class="st"> </span><span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>) <span class="st">&#39;</span><span class="ch">\\</span><span class="st">n&#39;</span> <span class="cf">else</span> <span class="st">&#39;</span><span class="ch">\\</span><span class="st">r</span><span class="ch">\\</span><span class="st">n&#39;</span>
+  
+  result &lt;-<span class="st"> </span><span class="kw">read_html</span>(url) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_nodes</span>(selector)
+  
+  <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2000</span>) result &lt;-<span class="st"> </span>result[[<span class="dv">4</span>]]
+  
+  result &lt;-<span class="st"> </span>result <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">html_text</span>()
+  
+  <span class="cf">if</span> (year <span class="op">==</span><span class="st"> </span><span class="dv">2009</span> <span class="op">&amp;&amp;</span><span class="st"> </span>female <span class="op">==</span><span class="st"> </span><span class="ot">FALSE</span>) <span class="kw">return</span>(result)
+  
+  result <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span><span class="kw">str_split</span>(regexp) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">    </span>.[[<span class="dv">1</span>]]
+}</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_tables &lt;-<span class="st"> </span><span class="kw">map2</span>(men_urls, years, extract_res_table, <span class="dt">female =</span> <span class="ot">FALSE</span>)
+women_tables &lt;-<span class="st"> </span><span class="kw">map2</span>(women_urls, years, extract_res_table, <span class="dt">female =</span> <span class="ot">TRUE</span>)
+<span class="kw">names</span>(men_tables) &lt;-<span class="st"> </span>years
+<span class="kw">names</span>(women_tables) &lt;-<span class="st"> </span>years
+<span class="kw">map_int</span>(men_tables, length)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 3194 3019 3628 3728 3952 4165 4336 5245 5284 5913 6659 6920 7020 7202</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">map_int</span>(women_tables, length)</code></pre></div>
+<pre><code>## 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+## 2360 2169 2976 3339 3548 3907 4343 5445 5700 6406 8334 8864 9039 9739</code></pre>
+<p>We save the data in text files for further processing.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dir.create</span>(<span class="st">&#39;men&#39;</span>)
+<span class="kw">dir.create</span>(<span class="st">&#39;women&#39;</span>)
+
+<span class="kw">walk2</span>(men_tables,
+      <span class="kw">paste</span>(<span class="st">&#39;men&#39;</span>, <span class="kw">paste</span>(years, <span class="st">&#39;txt&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;.&#39;</span>), <span class="dt">sep =</span> <span class="st">&#39;/&#39;</span>),
+      write_lines)
+<span class="kw">walk2</span>(women_tables,
+      <span class="kw">paste</span>(<span class="st">&#39;women&#39;</span>, <span class="kw">paste</span>(years, <span class="st">&#39;txt&#39;</span>, <span class="dt">sep =</span> <span class="st">&#39;.&#39;</span>), <span class="dt">sep =</span> <span class="st">&#39;/&#39;</span>),
+      write_lines)</code></pre></div>
+
+</div>
+<p style="text-align: center;">
+<a href="introduction.html"><button class="btn btn-default">Previous</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

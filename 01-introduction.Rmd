@@ -1,0 +1,25 @@
+# Introduction
+
+In this era of ‘free and ubiquitous data,’ there is tremendous potential in seeking out data to bring insight to a problem we are working on professionally or to a topic of personal interest. For example, we are interested in understanding how people’s physical performance changes as they age. One source of data about this comes from road races. Hundreds of thousands of people participate in road races each year; the race organizers collect information about the runners’ times and often publish individual-level data on the Web. These freely accessible data may provide us with insights to our question about performance and age.
+
+One example of the many annual road races is the Cherry Blossom Ten Mile Run held in Washington D.C. in early April when the cherry trees are typically in bloom. The Cherry Blossom started in 1973 as a training run for elite runners who were planning to compete in the Boston Marathon. It has since grown in popularity and in 2012 nearly 17,000 runners ranging in age from 9 to 89 participated. The race has become so popular that entrants are chosen via a lottery or they guarantee a spot by raising $500 for an official race charity. After each year’s race, the organizers publish the results at http://www.cherryblossom.org/. These data offer a tremendous resource for learning about the relationship between age and performance.
+
+The publicly available race results from the Cherry Blossom Ten Mile Run can be scraped from the Web and read into R [3] for analysis. The currently published results include all years from 1999 to 2012. The task of scraping the Web site and formatting the results in a way that can be analyzed in R is a bit challenging because the information reported and the format of this information changes from year to year. Some simple differences in format occur in the format of the table header and the use of footnotes. The tables also include many mistakes, e.g., values that begin in the wrong column, missing headers, and so on. All in all, the acquisition of the data is quite straightforward, but it is an iterative process as we uncover several small errors. We do this statistically, i.e., we examine summary statistics and plots of the data we have read into R, find anomalies, such as all the runners in 2003 being under 9, cross check sample observations with the original tables, modify our code to handle these problem cases in a way that is as general as possible, recreate our data, and repeat. This is the story of “messy” data. It is the focus of Section 2.2 and Section 2.3 of this chapter. Additionally, Section 2.7 covers the topic of scraping the Web for the race results, for those who are interested in the entire process of data acquisition.
+
+After the data have been successfully read into R and cleaned, we study the relationship between run time and age in Section 2.4. Given the popularity of the race, simple tasks such as visualizing the data present challenges, and we consider how to display tens of thousands of observations in an informative manner.
+
+For any one year of race results, we have a cross-sectional view of the performance-age relationship. That is, we are looking at different groups of people of various ages and their run times; we are not viewing an individual’s race performance as he or she gets older. However, we do have race results for 14 years and many runners have participated in multiple races. If we can associate run times over years with an individual runner, we can examine how performance changes for an individual as he or she ages. The data include the runner’s name, age, and hometown, so we consider how we might use this information to construct longitudinal views of run times for individuals. This is the subject of Section 2.5.
+
+If we study those runners who have competed in multiple years, then we have a longitudinal view of performance. However, we have results for a runner for at most 14 years, so we are unable to view performance for an individual over the full range of participant ages from 18 to 89. Can we piece together these longitudinal data to get estimates for performance as a function of age? We explore approaches for this in Section 2.6.
+
+## Computational Topics
+
+
+* Use regular expressions to extract and clean messy data from pre-formatted text tables and to create unique identifiers for matching records that belong to the same individual.
+* Employ statistical techniques to identify bad data and to confirm these problems have been corrected.
+* Visualize data that have a large number of observations (~150,000 records).
+* Gain experience with the R formula language for plots and modeling.
+* Fit piecewise linear models using least squares and non-parametric curves using local averaging.
+* Compare data structures, e.g., a data frame and a list of data frames, for holding and working with longitudinal data. This includes the application of ‘apply’ functions such as `tapply()`, `mapply()`, `sapply()`, and `lapply()`.
+* Develop strategies for debugging code with `recover()` for browsing active function calls after an error.
+* Scrape simple Web pages for text content.

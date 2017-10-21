@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Modeling Runners’ Times in the Cherry Blossom Race" />
+<meta property="og:type" content="book" />
+
+
+
+
+
+<meta name="author" content="John Ensley" />
+
+<meta name="date" content="2017-10-21" />
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+
+<meta name="description" content="Modeling Runners’ Times in the Cherry Blossom Race">
+
+<title>Modeling Runners’ Times in the Cherry Blossom Race</title>
+
+<link href="libs/tufte-css/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#preface">Preface</a></li>
+<li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="scraping.html#scraping"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
+<li><a href="reading.html#reading"><span class="toc-section-number">3</span> Reading Tables of Race Results into R</a></li>
+<li><a href="data-cleaning-and-reformatting-variables.html#data-cleaning-and-reformatting-variables"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
+<li><a href="exploring.html#exploring"><span class="toc-section-number">5</span> Exploring the Run Time for All Male Runners</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="exploring" class="section level1">
+<h1><span class="header-section-number">5</span> Exploring the Run Time for All Male Runners</h1>
+<p>Now that we have completed the extraction of our data from the tables published on the Cherry Blossom Web site, we can begin to study the relationship between age and run time. Typically, we first examine our data graphically in a scatter plot with run time on the y-axis and age on the x-axis. We can make such a scatter plot for the male runners with the following call to <code>ggplot()</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(men_df, <span class="kw">aes</span>(age, time)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_point</span>()</code></pre></div>
+<pre><code>## Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<div class="figure"><span id="fig:scatterplot-default"></span>
+<p class="caption marginnote shownote">
+Figure 5.1: Default Scatter Plot for Run Time vs. Age for Male Runners. This plot demonstrates that a simple scatter plot of run time by age for the 70,000 male runners leads to such severe over plotting that the shape of the data is not discernible.
+</p>
+<img src="_main_files/figure-html/scatterplot-default-1.png" alt="Default Scatter Plot for Run Time vs. Age for Male Runners. This plot demonstrates that a simple scatter plot of run time by age for the 70,000 male runners leads to such severe over plotting that the shape of the data is not discernible." width="672"  />
+</div>
+<p>The resulting plot appears in Figure <a href="exploring.html#fig:scatterplot-default">5.1</a>. Most of the points appear as a black blob in the scatter plot because so many points have been plotted on top of each other. The shape of the distribution is obscured because we cannot see which regions of the (age, run time) space are more densely populated. Notice also the vertical stripes in the plot. These are the result of runner’s age being reported to the nearest year, which results in more over plotting. In the next section, we consider a few alterations to this default scatter plot that address the problem of over plotting.</p>
+<div id="making-plots-with-many-observations" class="section level2">
+<h2><span class="header-section-number">5.1</span> Making Plots with Many Observations</h2>
+<p>There are several modifications we can make to the plot in Figure <a href="exploring.html#fig:scatterplot-default">5.1</a> to ameliorate the effect of over plotting. We can reduce the size of the plotting symbol, use transparent colors for the plotting symbol, and add a small amount of random noise to the age variable. Alternatively, we can create a plot that reveals a smoothed version of the density of the points in each region. We can also make a series of boxplots instead of a scatter plot. We demonstrate each of these approaches in this section.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(age <span class="op">&gt;</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, time)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_jitter</span>(<span class="dt">shape =</span> <span class="st">&#39;.&#39;</span>, <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">alpha =</span> <span class="fl">0.2</span>, <span class="dt">height =</span> <span class="dv">0</span>, <span class="dt">width =</span> <span class="fl">0.5</span>, <span class="dt">color =</span> <span class="st">&#39;#54278f&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:scatterplot-fixed"></span>
+<p class="caption marginnote shownote">
+Figure 5.2: Revised Scatter Plot of Male Runners. This plot revises the simple scatter plot by changing the plotting symbol from a circle to a point, reducing the size of the plotting symbol, using a transparent color for the points, and adding a small amount of random noise to age. Now we see the shape of the high density region containing most of the runners and the slight upward trend of time with increasing age.
+</p>
+<img src="_main_files/figure-html/scatterplot-fixed-1.png" alt="Revised Scatter Plot of Male Runners. This plot revises the simple scatter plot by changing the plotting symbol from a circle to a point, reducing the size of the plotting symbol, using a transparent color for the points, and adding a small amount of random noise to age. Now we see the shape of the high density region containing most of the runners and the slight upward trend of time with increasing age." width="672"  />
+</div>
+<p>Our first plot appears in Figure <a href="exploring.html#fig:scatterplot-fixed">5.2</a>. This plot is much improved from the initial one in Figure <a href="exploring.html#fig:scatterplot-default">5.1</a>. We can see where the bulk of the runners are, including what appears to be a slight upward curvature in run time as age increases and a skew distribution of run time given age. We can also see the small group of runners with very fast run times.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(age <span class="op">&gt;</span><span class="st"> </span><span class="dv">5</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, time)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">stat_density_2d</span>(<span class="kw">aes</span>(<span class="dt">fill =</span> ..density..), <span class="dt">geom =</span> <span class="st">&#39;raster&#39;</span>, <span class="dt">contour =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_fill_gradientn</span>(<span class="dt">colors =</span> <span class="kw">c</span>(<span class="st">&#39;white&#39;</span>, <span class="st">&#39;dodgerblue3&#39;</span>, <span class="st">&#39;dodgerblue4&#39;</span>), <span class="dt">values =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>))</code></pre></div>
+<div class="figure"><span id="fig:scatterplot-smooth"></span>
+<p class="caption marginnote shownote">
+Figure 5.3: Smoothed Scatter Plot of Male Runners Race Times vs. Age. This plot offers an alternative to the scatter plot that uses jittering and transparent color to ameliorate the over plotting. Here there is no need to jitter age because the smoothing action essentially does that for us by spreading an individual runner’s (age, run time) pair over a small region. The shape of the high density region has a very similar shape to the earlier plot.
+</p>
+<img src="_main_files/figure-html/scatterplot-smooth-1.png" alt="Smoothed Scatter Plot of Male Runners Race Times vs. Age. This plot offers an alternative to the scatter plot that uses jittering and transparent color to ameliorate the over plotting. Here there is no need to jitter age because the smoothing action essentially does that for us by spreading an individual runner’s (age, run time) pair over a small region. The shape of the high density region has a very similar shape to the earlier plot." width="672"  />
+</div>
+<p>The smoothed two-dimensional density plot in Figure <a href="exploring.html#fig:scatterplot-smooth">5.3</a> shows a very similar shape to our plot in Figure <a href="exploring.html#fig:scatterplot-fixed">5.2</a>.</p>
+<p>A very different approach to these scatter plots is to graphically display summary statistics of run time for subgroups of runners with roughly the same age. Here, we group the runners into 10-year age intervals and plot the summaries for each subgroup in the form of a boxplot (see Figure <a href="exploring.html#fig:boxplots-age">5.4</a>). With these side-by-side boxplots, the size of the data does not obscure the main features, e.g., the quartiles and tails for an age group. To make these boxplots, we categorize age using the <code>cut()</code> function. We first remove those runners under 15 or who have unrealistic run times. Then we categorize age with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(time <span class="op">&gt;</span><span class="st"> </span><span class="dv">30</span>, <span class="op">!</span><span class="kw">is.na</span>(age), age <span class="op">&gt;</span><span class="st"> </span><span class="dv">15</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">age_cat =</span> <span class="kw">cut</span>(age, <span class="dt">breaks =</span> <span class="kw">c</span>(<span class="kw">seq</span>(<span class="dv">15</span>, <span class="dv">75</span>, <span class="dv">10</span>), <span class="dv">90</span>)))
+
+<span class="kw">table</span>(men_df_agecat<span class="op">$</span>age_cat)</code></pre></div>
+<pre><code>## 
+## (15,25] (25,35] (35,45] (45,55] (55,65] (65,75] (75,90] 
+##    5804   25434   20535   12212    5001     752      69</code></pre>
+<p>This new variable, <code>age_cat</code>, is a factor that categorizes age into 10-year intervals with the exception of all of those over 75 being lumped together into one interval.</p>
+<p>We see in Figure <a href="exploring.html#fig:boxplots-age">5.4</a> that we have created a series of boxplots rather than a scatter plot. We observe in this plot that the upper quartile increases faster with age than the median and lower quartile. In the next section, we try summarizing this relationship between age and run time more formally.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age_cat, time)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_boxplot</span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Age (years)&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Run time (minutes)&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:boxplots-age"></span>
+<p class="caption marginnote shownote">
+Figure 5.4: Side-by-Side Boxplots of Male Runners’ Run Time vs. Age. This sequence of boxplots shows the quartiles of time for men grouped into 10-year age intervals. As age increases, all the quartiles increase. However, the box becomes asymmetrical with age, which indicates that the upper quartile increases faster than the median and lower quartile.
+</p>
+<img src="_main_files/figure-html/boxplots-age-1.png" alt="Side-by-Side Boxplots of Male Runners’ Run Time vs. Age. This sequence of boxplots shows the quartiles of time for men grouped into 10-year age intervals. As age increases, all the quartiles increase. However, the box becomes asymmetrical with age, which indicates that the upper quartile increases faster than the median and lower quartile." width="672"  />
+</div>
+</div>
+<div id="fitting-models-to-average-performance" class="section level2">
+<h2><span class="header-section-number">5.2</span> Fitting Models to Average Performance</h2>
+<p>As seen in Figure <a href="exploring.html#fig:boxplots-age">5.4</a>, the average performance seems to curve upward with age. A simple linear model may be inadequate to describe this relationship. To see how well the simple linear model captures the relationship (or not) between run time and age, we fit the model with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_age &lt;-<span class="st"> </span><span class="kw">lm</span>(time <span class="op">~</span><span class="st"> </span>age, <span class="dt">data =</span> men_df_agecat)</code></pre></div>
+<p>The <code>lm()</code> function performs least squares to find the best fitting line to our data, which we see has the following intercept and slope:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_age<span class="op">$</span>coefficients</code></pre></div>
+<pre><code>## (Intercept)         age 
+##  78.7570864   0.2252816</code></pre>
+<p>We have assigned the return value from <code>lm()</code> to <code>lm_age</code>. This object contains the coefficients from the fit, predicted values, residuals, and other information about the linear least squares fit of run time to age. We can retrieve a brief summary of the fit with a call to <code>summary()</code> as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(lm_age)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = time ~ age, data = men_df_agecat)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -40.333 -10.220  -0.952   9.102  82.425 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 78.757086   0.207692  379.20   &lt;2e-16 ***
+## age          0.225282   0.005169   43.58   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 14.77 on 69805 degrees of freedom
+## Multiple R-squared:  0.02649,    Adjusted R-squared:  0.02647 
+## F-statistic:  1899 on 1 and 69805 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>To help us assess how well the simple linear model fits the data we plot the residuals against age. As with the original scatter plot of run time against age, we need to address the issue of over plotting. Further, to help us see any curvature in the residuals, we add to the plot a horizontal line at 0. We do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span>modelr<span class="op">::</span><span class="kw">add_residuals</span>(lm_age) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, resid)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">stat_density_2d</span>(<span class="kw">aes</span>(<span class="dt">fill =</span> ..density..), <span class="dt">geom =</span> <span class="st">&#39;raster&#39;</span>, <span class="dt">contour =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_fill_gradientn</span>(<span class="dt">colors =</span> <span class="kw">c</span>(<span class="st">&#39;white&#39;</span>, <span class="st">&#39;dodgerblue3&#39;</span>, <span class="st">&#39;dodgerblue4&#39;</span>), <span class="dt">values =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> <span class="dv">0</span>, <span class="dt">color =</span> <span class="st">&#39;navy&#39;</span>)</code></pre></div>
+<p>To help us further discern any pattern in the residuals, we augment this residual plot with a smooth curve of local averages of the residuals from the fit. That is, for a particular age, say 37, we take a weighted average of the residuals for those runners with an age in a small neighborhood of 37. Such a locally fitted curve allows us to better see deviations in the pattern of residuals.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p <span class="op">+</span><span class="st"> </span><span class="kw">geom_smooth</span>(<span class="dt">se =</span> <span class="ot">FALSE</span>, <span class="dt">linetype =</span> <span class="st">&#39;dashed&#39;</span>, <span class="dt">color =</span> <span class="st">&#39;firebrick&#39;</span>)</code></pre></div>
+<pre><code>## `geom_smooth()` using method = &#39;gam&#39;</code></pre>
+<div class="figure"><span id="fig:residuals-lm"></span>
+<p class="caption marginnote shownote">
+Figure 5.5: Residual Plot from Fitting a Simple Linear Model of Performance to Age. Shown here is a smoothed scatter plot of the residuals from the fit of the simple linear model of run time to age for male runners who are 15 to 80 years old. Overlaid on the scatter plot are two curves. The “curve” in dark blue is a solid horizontal line at <span class="math inline">\(y = 0\)</span>. The red dashed curve is a local smooth of the residuals.
+</p>
+<img src="_main_files/figure-html/residuals-lm-1.png" alt="Residual Plot from Fitting a Simple Linear Model of Performance to Age. Shown here is a smoothed scatter plot of the residuals from the fit of the simple linear model of run time to age for male runners who are 15 to 80 years old. Overlaid on the scatter plot are two curves. The “curve” in dark blue is a solid horizontal line at $y = 0$. The red dashed curve is a local smooth of the residuals." width="672"  />
+</div>
+<p>The augmented smoothed scatter plot appears in Figure <a href="exploring.html#fig:residuals-lm">5.5</a>. We see that the simple linear model tends to underestimate the run time for men over 60. This confirms our observations from the boxplot and smooth scatter plot of the nonlinear trend in run time. The simple linear model is not able to capture the change in performance with age.</p>
+<p>We consider two approaches to a more complex fit: a piecewise linear model and a nonparametric smooth curve. For the latter, we simply take local weighted averages of time as age varies, just as we smoothed the residuals from the linear fit. We use <code>loess()</code> to do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_res_lo &lt;-<span class="st"> </span><span class="kw">loess</span>(time <span class="op">~</span><span class="st"> </span>age, <span class="dt">data =</span> men_df_agecat)</code></pre></div>
+<p>and we make predictions for all ages ranging from 20 to 80 with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">age20to80 &lt;-<span class="st"> </span><span class="dv">20</span><span class="op">:</span><span class="dv">80</span>
+men_res_lo_pr &lt;-<span class="st"> </span><span class="kw">predict</span>(men_res_lo, <span class="kw">data.frame</span>(<span class="dt">age =</span> age20to80))</code></pre></div>
+<p>The curve appears in Figure <a href="#fig:piecewise-fits"><strong>??</strong></a>.</p>
+
+</div>
+</div>
+<p style="text-align: center;">
+<a href="data-cleaning-and-reformatting-variables.html"><button class="btn btn-default">Previous</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

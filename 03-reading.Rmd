@@ -1,0 +1,270 @@
+# Reading Tables of Race Results into R {#reading}
+
+Our goal in this section is to transform the raw text tables of race results into data that can be analyzed in R. These tables have been downloaded from the web and stored in files, named `1999.txt`, ..., `2012.txt` in a directory called `men` for men and `women` for women. The task of downloading the Web pages and extracting the tables is addressed in Section \@ref(scraping).
+
+Let’s examine these text tables to get a sense of their format. After that we should have a few ideas about how we might extract information contained in these tables into variables for statistical analysis. Figure \@ref(fig:menresults) and Figure \@ref(fig:womenresults) provide screenshots of two tables as they appear on the Web. By inspection, we see that a call to `read.table()` will not properly read the text into a data frame because the information, e.g., place and division, are separated by blanks but blanks also appear in the data values, i.e., blanks also occur where they are not being used as variable separators. For example, for the runner’s hometown, we see values of `Kenya`, `Tucson AZ`, and `Blowing Rock NC`. The blanks between the different parts of hometown will confuse `read.table()`. We confirm this when we try to use `read.table()` to input the data:
+
+```{r, error=T}
+m2012 <- read.table('men/2012.txt', skip = 8)
+```
+
+Note that we skipped the first 8 lines of the file because we observed in Figure \@ref(fig:menresults) that these belong to the header of the file.
+
+
+We need a customized approach to reach this ‘table.’ From the figures, it appears that the variables are formatted to occupy particular positions in each line of text. That is, the runner’s finishing place occupies the first 5 characters, then comes a blank character, the runner’s place in his or her division appears in the next 11 spaces, and so on. While the first 2 columns of the 2011 and 2012 male results line up, we see that the columns are not identical across these tables. Given the changes in formats from year to year, we can extract the values from the tables either by programmatically interpreting the format or by using year-dependent fixed-width formats. We take the first approach here and figure out which column is which by programmatically inspecting the table header. We leave the second approach as an exercise. There you examine all 28 tables, determine the start and end position of each column of interest, and use `readr::read_fwf()` to input the data into R.
+
+Rather than view the Web pages to determine the file format, we can get a better sense of the format if we examine the raw text itself. We use `read_lines()` to read the contents of the file into R, where the return value is a character vector with one string per line of text read. We start by reading the 2012 men’s file with
+
+```{r}
+els <- read_lines('men/2012.txt')
+```
+
+The first 10 rows of the 2012 men's table are
+
+```{r}
+head(els, 10)
+```
+
+We also read in and display the first 10 rows of the 2011 male results so we have another table to compare with the 2012 table. We find the following:
+
+```{r}
+els2011 <- read_lines('men/2011.txt')
+head(els2011, 10)
+```
+
+What do we find with this simple inspection?
+
+* Both of the tables have a header
+* The last line of the header is a row of '=' characters, i.e. a separation line.
+* There are blanks inserted in the row of '=' characters that mark the start and end of a column of information, e.g. the Pace column occupies 5 spaces.
+* The row above the '=' characters gives column names.
+* There are two times reported in 2011 (called `Gun Tim` and `Net Tim`) and only one time reported in 2012 (`Time`). The header of the e 2012 file tells us that `Time` is net time.
+
+If we examine a few more years of race results, we find other differences between how the data are organized. Some years have column names that are all capitalized; do not include the time at 5 miles; contain a rightmost column that holds some sort of annotation, e.g., #; have headers consisting of 3 lines instead of 8, etc.
+
+Let’s use the 2012 men’s results as our test case for developing the code to read in all the files. However, we will try to write the code in a general way so that it can potentially be used for all 28 files. Our first step is to find the row with the equal signs. The rows below it contain the data, the row above it holds the column headers, and the row itself supplies the spacings for the columns. We saw earlier that the ‘=’ characters are in the eighth row of the 2012 table. Since the organization of the tables differs a bit from year to year, we use a programmatic search for the equal signs. We use `str_which()` to search through the character strings in els for one that begins with, say, 3 equal signs as follows:
+
+```{r}
+eq_idx <- str_which(els, '^===')
+```
+
+The choice of 3 ‘=’ characters is somewhat arbitrary. We could have used just one as the equal sign does not appear elsewhere in the document.
+
+Now that we have located this key row in the table, we extract it and the row above it and discard earlier rows with
+
+```{r}
+spacer_row <- els[eq_idx]
+header_row <- els[eq_idx - 1]
+body <- tail(els, -eq_idx)
+```
+
+Our next task is to extract the various pieces of information from each string in body, i.e., the content of the table. How might we extract the runner’s age? From inspection, a runner’s age appears in the column labeled `Ag` or `AG` so we first convert the column names to lower case so we need not search separately for `Ag` and `AG`. We use `str_to_lower()` to do this with
+
+```{r}
+header_row <- str_to_lower(header_row)
+```
+
+We can search through `header_row` for this two letter sequence as follows:
+
+```{r}
+age_location <- str_locate(header_row, 'ag')
+age_location
+```
+
+The return value from `str_locate()` tells us a match was found in position 49 of the character string. Now we have the information about the location of runner's age: it begins in position 49 and ends at the 50th position in each row of the table. We use this information to extract each runner's age using `str_sub()` as follows:
+
+```{r}
+age <- str_sub(body, start = age_location[1,1], end = age_location[1,2])
+head(age)
+summary(as.numeric(age))
+```
+
+It appears that we have located the runner's age correctly. The youngest male runner in 2012 was 9 and the oldest was 89, and there was one runner who did not have an age reported.
+
+We can extract all of our variables in this manner, but the width of a column might change from one year to the next so we generalize our code to search the row of equal signs for blank spaces and use the position of these to determine the locations of the columns. This approach is better than searching for variable names to find the starting position of the column of values. We find the locations of all of the blanks in the line of ‘=’ characters with
+
+```{r}
+blank_locs <- str_locate_all(spacer_row, ' ')[[1]][ ,1]
+blank_locs
+```
+
+Here the function `str_locate_all()` searches for multiple matches in the string, not just the first match. Blank spaces are found at the 6th, 18th, 25th, 48th, 51st, etc. positions.
+
+In general, we want to write our code so that it does not depend on a variable name starting or ending in a particular column. We can extract all the columns of values using `blank_locs` to determine the start and end positions of the columns. The starting position of a column is one character past a blank and the ending position is one character before a blank. In order to properly handle the first column, we can augment `blank_locs` with 0 so the first column starts one character after 0, i.e.,
+
+```{r}
+search_locs <- c(0, blank_locs)
+```
+
+We can extract all the columns with `str_sub()` by
+
+```{r}
+values <- map(body, str_sub,
+              start = head(search_locs, -1) + 1,
+              end = tail(search_locs, -1) - 1)
+```
+
+We encapsulate the task of finding the starting and ending positions of the columns into a function, which we call `find_col_locs()`. In the function, we safeguard against the last character in the row of ‘=’ characters not being a blank, we add an additional element to the end of the vector of locations that is one character more than the length of the string. Our function appears as:
+
+```{r}
+find_col_locs <- function(spacer_row) {
+  space_locs <- str_locate_all(spacer_row, ' ')[[1]][ ,1]
+  row_length <- nchar(spacer_row)
+  
+  if (!str_detect(spacer_row, ' $')) {
+    return(c(0, space_locs, row_length + 1))
+  } else return(c(0, space_locs))
+}
+```
+
+We can extract all 10 columns of data from the 2012 file, but do we want to keep all of these variables? Do we want to keep the union of all variables across the 14 years? Or, use only a subset? For now, we extract name, age, hometown, and all 3 times, i.e., gun time, net time, and time, and ignore the rest, e.g., place, div, and the 5-mile run time. We encapsulate into a function the code to extract the locations of the desired columns. We need, as inputs to this function, the names of the desired columns, the header row that contains the column names, and the locations of the blanks in the separator row. Our function follows:
+
+```{r}
+select_cols <- function(col_names, header_row, search_locs) {
+  select_col <- function(name, header_row, search_locs) {
+    start_pos <- str_locate(header_row, name)[1,1]
+    if (is.na(start_pos)) return(c(NA, NA))
+    index <- sum(start_pos >= search_locs)
+    c(search_locs[index] + 1, search_locs[index + 1] - 1)
+  }
+  
+  map(col_names, select_col, 
+      header_row = header_row, 
+      search_locs = search_locs) %>% 
+    do.call('rbind', .)
+}
+```
+
+The encapsulation of `map()` makes it easy for us to test our code on individual column names and extract a subset of columns. For example, we can find the age variable with
+
+```{r}
+search_locs <- find_col_locs(spacer_row)
+age_loc <- select_cols('ag', header_row, search_locs)
+ages <- map_chr(body, str_sub,
+                start = age_loc[ ,1],
+                end = age_loc[ ,2])
+summary(as.numeric(ages))
+```
+
+Our more general extraction matches the earlier one.
+
+Another advantage to creating `select_cols()` and `find_col_locs()` is that these functions make our code modular so our code is easier to follow and to modify in the context of the larger data extraction and cleaning process.
+
+Since the column names vary somewhat from year to year, we use only the first few characters that uniquely identify the desired columns, e.g.,
+
+```{r}
+short_col_names = c("name", "home", "ag", "gun", "net", "time")
+```
+
+Also, if a file does not have one of the desired variables, then we want the values for that variable to be `NA`. We can anticipate this situation because we have seen that the 2011 file has gun time and net time, but not time, and the 2012 file has a column labeled time, but no gun or net times.
+
+```{r}
+loc_cols <- select_cols(short_col_names, header_row, search_locs)
+values <- map(body, str_sub,
+              start = loc_cols[ ,1],
+              end = loc_cols[ ,2]) %>% 
+  do.call('rbind', .)
+```
+
+Let's examine the return value. First we check the type of the return value with
+
+```{r}
+class(values)
+```
+
+The results form a matrix of character strings. (We have not yet converted any values such as age to numeric.) We see that the first few rows of the matrix are
+
+```{r}
+colnames(values) <- short_col_names
+head(values)
+```
+
+The 2012 table has a column for time and not gun and net times so the gun and net values are NA. We also check the last few lines with
+
+```{r}
+tail(values)
+```
+
+Here we see the one runner who did not report an age. It appears that we have successfully captured the information from the table in `men/2012.txt`.
+
+We wrap up the process of extracting the columns into a function so we can apply it to each year’s data. This function calls our helper functions `find_col_locs()` and `select_cols()`. Our function might look like
+
+```{r}
+extract_variables <- function(file, var_names = c("name", "home", "ag", "gun", "net", "time")) {
+  # find the index of the row with =s
+  eq_idx <- str_which(file, '^===')
+  # extract the two key rows and the data
+  spacer_row <- file[eq_idx]
+  header_row <- file[eq_idx - 1] %>% str_to_lower()
+  body <- tail(file, -eq_idx)
+  
+  # get starting and ending positions of variables
+  search_locs <- find_col_locs(spacer_row)
+  loc_cols <- select_cols(var_names, header_row, search_locs)
+  values <- map(body, str_sub, loc_cols) %>% do.call('rbind', .)
+  colnames(values) <- var_names
+  invisible(values)
+}
+```
+
+We are ready to create the data frames for each year, but the `extract_variables()` function expects the file passed to it for the extraction to be a character vector. We first must read the lines of the tables into R. We do this with:
+
+```{r}
+mfilenames <- list.files('men', pattern = '.txt$', full.names = TRUE)
+men_files <- map(mfilenames, read_lines)
+names(men_files) <- str_match(mfilenames, 'men/(.*).txt')[ ,2]
+```
+
+Similarly, we can read the women’s results into `women_files`. 
+
+```{r}
+wfilenames <- list.files('women', pattern = '.txt$', full.names = TRUE)
+women_files <- map(wfilenames, read_lines)
+names(women_files) <- str_match(wfilenames, 'women/(.*).txt')[ ,2]
+```
+
+These two objects, `men_files` and `women_files`, are lists where each list contains 14 character vectors, one for each year. Each of these character vectors contains one string for every row in the corresponding file.
+
+We can now apply the `extract_variables()` function to `men_files` and `women_files` to obtain a list of character matrices. We do this for the men’s list with
+
+```{r}
+men_res_mat <- map(men_files, extract_variables)
+length(men_res_mat)
+map_int(men_res_mat, nrow)
+```
+
+and for the women's list with
+
+```{r, error=T}
+women_res_mat <- map(women_files, extract_variables)
+```
+
+Unfortunately, there is a problem with one of the women's files. In 2001, the separator row of '=' characters does not exist!
+
+```{r}
+head(women_files$`2001`)
+```
+
+It looks as though the women's file shares the same header as the men's 2001 file. The men's file did load correctly, so I will cheat a little bit and manually parse the women's file with the header information from the men's file.
+
+```{r}
+men_file_2001 <- men_files$`2001`
+women_file_2001 <- women_files$`2001`
+
+eq_idx_2001 <- str_which(men_file_2001, '^===')
+spacer_row_2001 <- men_file_2001[eq_idx_2001]
+header_row_2001 <- men_file_2001[eq_idx_2001 - 1] %>% str_to_lower()
+
+women_files$`2001`[2] <- header_row_2001
+women_files$`2001`[3] <- spacer_row_2001
+```
+
+Let's try parsing the women's files again.
+
+```{r}
+women_res_mat <- map(women_files, extract_variables)
+length(women_res_mat)
+map_int(women_res_mat, nrow)
+```
+
+We see that we get reasonable values for the number of rows in our matrices. Our next task is then to convert these character matrices into a format that we can readily analyze. As we do this, we use statistics to check the results and find that additional data cleaning is necessary. This is the topic of the next chapter.
