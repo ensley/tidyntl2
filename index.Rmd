@@ -20,6 +20,8 @@ link-citations: yes
 ```{r setup, include=FALSE}
 library(tufte)
 library(tidyverse)
+library(broom)
+library(stringr)
 library(rvest)
 library(xml2)
 library(RColorBrewer)

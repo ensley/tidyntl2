@@ -1,0 +1,251 @@
+# Constructing a Record for an Individual Runner across Years {#individuals}
+
+We want to match records from runners who have participated in more than one Cherry Blossom run. The race results do not have unique identifiers for each person so we need to construct these from the information we have on each race entrant. Ideally we use all of the information, i.e. the runner's name, home, age, race time, and the year of the race. However, if this information is reported inconsistently from one year to the next, then this can reduct the number of matches. On the other hand, even using all of this information we may be incorrectly matching records from two different athletes. Whatever approach we devise will not be completely accurate, and the purpose of this section is to investigate several possibilities and settle on one that we think is reasonable.
+
+We consider the following questions:
+
+* How many entrants are there over the 14 years?
+* How many unique names are there among these entrants?
+* How many names appear twice, 3 times, 4 times, etc. and what name occurs most often?
+* How often does a name appear more than once in a year?
+
+Answering these questions gives us a sense of the magnitude of the matching problem. Additionally, we consider how to improve the matching by cleaning the `name` and `home` values. _The book describes trimming white space and fixing inconsistent capitalization here. We have already taken care of that in Chapter \@ref(cleaning)._
+
+Now we can begin to answer the questions about the uniqueness of the names. We do this by examining summary statistics and sets of records.
+
+How many entrants are there over the 14 races? We use `length()` to find out:
+
+```{r}
+length(men_df_agecat$name)
+```
+
+Recall, we have dropped those records with a run time under 30 minutes, and age under 16.
+
+How many unique names are there?
+
+```{r}
+length(unique(men_df_agecat$name))
+```
+
+How many names appear once, twice, etc.? We can determine this by two calls to `table()`, i.e.
+
+```{r}
+table(table(men_df_agecat$name))
+```
+
+What does this table tell us? We see that over 6000 names appear 2 times throughout the 14 races. One name appears 33 times, and we know this name must correspond to at least 3 people because we have only 14 years of race results.
+
+Which name appears 30 times? We can find that with
+
+```{r}
+head(sort(table(men_df_agecat$name), decreasing = TRUE), 1)
+```
+
+Let's examine other information about these 33 Michael Smiths. We extract them from our data frame with
+
+```{r}
+msmith <- men_df_agecat %>% filter(name == 'Michael Smith')
+```
+
+The hometowns include
+
+```{r}
+msmith %>% count(home) %>% arrange(desc(n)) %>% head()
+```
+
+Thinking ahead, we might ask: can we do more cleaning to potentially improve the matching? We have already made the capitalization more consistent. Additionally, we can remove punctuation such as a period after someone's middle initial and any stray commas. We do this in one call to `gsub()` with
+
+```{r}
+men_df_agecat <- men_df_agecat %>% 
+  mutate(name = str_replace_all(name, '[,.]', ''))
+```
+
+With so many duplicate names, let's figure out how many times a name appears in the same year. We can create a table of year-name combinations with
+
+```{r}
+tab_name_yr <- table(men_df_agecat$year, men_df_agecat$name)
+```
+
+and then call `max()` to find the cell in the table with the greatest count, i.e.,
+
+```{r}
+max(tab_name_yr)
+```
+
+Is this Michael Smith again? It takes a bit of work to find the name associated with this maximum. The table saved in `tab_name_yr` is of class `table`, which we see is a numeric vector with 3 attributes, `dim`, `dimname`, and `class`. Calls to `class()`, `mode()`, and `attributes()` help figure this out, i.e.,
+
+```{r}
+class(tab_name_yr)
+mode(tab_name_yr)
+names(attributes(tab_name_yr))
+```
+
+There are several implications of this data structure. First, some matrix functions work on a `table`, e.g. we can call `dim()` and `colnames()` and find
+
+```{r}
+dim(tab_name_yr)
+head(colnames(tab_name_yr), 3)
+```
+
+Notice we have uncovered another piece of messy data! To find out which cell has a count of 5, we can use `which()`, but to find the row and column location, we need to include the `arr.ind` argument in our call. That is,
+
+```{r}
+idx_max <- which(tab_name_yr == max(tab_name_yr), arr.ind = TRUE)
+idx_max
+```
+
+Finally, we locate the name(s) with
+
+```{r}
+colnames(tab_name_yr)[idx_max[2]]
+```
+
+It's Michael Brown, not Michael Smith!
+
+We can also derive an approximation to year of birth because we have the runner's age and the year of the race. The difference between these two is an approximation to age because the race is held on the first Sunday in April every year. Those runners who have a birthday in the first 7 days of April may have their age reported inconsistently from one race year to the next. What fraction of the records can we expect to have this problem? We create a new variable `yob` in our data frame with
+
+```{r}
+men_df_agecat <- men_df_agecat %>% 
+  mutate(yob = year - age)
+```
+
+Let's look closer at the values for these new and cleaned variables for the Michael Browns in our data frame. We do this with
+
+```{r}
+men_df_agecat %>% 
+  filter(name == 'Michael Brown') %>% 
+  arrange(yob) %>% 
+  select(year, name, home, yob, time)
+```
+
+What observations can we make about these various `Michael Brown` rows?
+
+* The 3 entries for `Michael Brown` born in 1953 seem to be the same person because all have a hometown of `North East MD`. Additionally, the 3 race times are within 7 minutes of each other.
+* The 4 entries for `Michael Brown` born in 1958 have race years of 2008, 2009, 2010, and 2012. The most recent entry lists Reston, VA for a hometown while the other 3 show Ashburn, VA. Do we have 1, 2, 3, or 4 different `Michael Brown`s here? The 2010 entrant ran the slowest of the 4 races by about 6 minutes and the other 3 times are closer. An internet search reveals that Reston and Ashburn are within 22 km of each other. It is conceivable that these 4 records belong to the same individual who moved from Ashburn to Reston between April 2010 and 2012. We can't know for sure.
+* Another 3 `Michael Brown` entries have 1966 for a birth year. All 3 list Chevy Chase as the hometown, except that for 2006, the state (MD) is not provided. When we examine more locations for other runners in 2006, we find that none of them list a state. These 3 `Michael Brown` records also have a range of 11 minutes for time with the middle year (2010) being the fastest. These records are likely for the same person, but we have uncovered an inconsistency in how home is reported for 2006 compared to the other years.
+* Next, we have 4 records for `Michael Brown` born in 1984, with races in 2008, 2010, 2011, and 2012. Of these, the 2010 record seems to be a different person as his home is listed as New York, NY and his race time is 25 to 40 minutes slower than the other 3 records. The other 3 all have the same hometown of Arlington, VA. They also have increasingly better times with a 2008 time of 84 and a 2012 time of 71 minutes. It is not unreasonable to think that these 3 records belong to the same person who has been training and running faster as he ages. Again, we cannot know this for sure.
+* Lastly, notice that the 5 `Michael Brown`s who registered for the 2012 race have different years of birth (1953, 1958, 1966, 1984, and 1988) and 5 different home towns. These are 5 different people.
+
+We summarize our various observations to make a first attempt to create an identifier for individuals. We might paste together the cleaned name and the derived year of birth. We do this with
+
+```{r}
+men_df_agecat <- men_df_agecat %>% 
+  mutate(id = paste(name, yob, sep = '_'))
+```
+
+We have ignored the information provided by the hometown and the run times and so have created the least restrictive identifier.
+
+Since our goal is to study how an athlete's time changes with age, let's focus on those IDs that appear in at least 8 races. To do this, we first determine how many times each `id` appears in `men_df_agecat` with
+
+```{r}
+races <- men_df_agecat %>% count(id)
+```
+
+Then we select those IDs that appear at least 8 times with
+
+```{r}
+races8 <- races %>% filter(n >= 8) %>% .$id
+```
+
+and we subset `men_df_agecat` to select the entries belonging to these identifiers with
+
+```{r}
+men8 <- men_df_agecat %>% filter(id %in% races8)
+```
+
+Finally, we organize the data frame so that entries with the same `id` are contiguous. This makes it easier to manually examine records, etc. We can do this with
+
+```{r}
+men8 <- men8 %>% arrange(id)
+```
+
+An alternative organization for the data is to store them as a list with an element for each ID in `races8`. In this list, each elmeent is a dat frame containing only those results for the records with the same ID. We can create this list with
+
+```{r}
+men8L <- men8 %>% group_by(id) %>% nest() %>% .$data
+names(men8L) <- races8
+```
+
+Which data structure is preferable? That depends on what we want to do with the data. In the following we show how to accomplish a task using both approaches to help make a comparison between the two structures. In the next section, we find it easiest to work with the list of data frames as we often need to apply a function of multiple arguments to each runner’s entries.
+
+How many IDs do we have left?
+
+```{r}
+length(unique(men8$id))
+```
+
+This is the same as `length(men8L)`. We might also want to discard matches if the performance varies too much from year to year. How large a fluctuation would make us think that we have mistakenly connected two different people? Of course, we don't want to bias our results by eliminating an individual whose run times vary a lot. Let's look at a few records where the year-to-year difference in time exceeds, say, 20 minutes. We determine which satisfy this constraint with
+
+```{r}
+gap_time <- map_lgl(men8L, ~ any(abs(diff(.$time)) > 20))
+```
+
+How many of these runners have gaps of more than 20 minutes?
+
+```{r}
+sum(gap_time)
+```
+
+Slightly reformatted displays of the first two of these athletes are
+
+```{r}
+map(men8L[gap_time][1:2], ~ .[ ,c('year', 'home', 'name', 'yob', 'time')])
+```
+
+The name `Abiy Zewde` seems unusual enough to most likely be the same person participating in 12 of the 14 races even though the hometown has changed over the years and the race results differ by nearly 40 minutes with one of the fastest times being the most recent when he was 45 years old.
+
+Do we want to further restrict our matching to those with the same hometown? This eliminates, e.g., the `Abiy Zewde` records, even though we're quite certain the records all belong to the same individual. We could identify the mismatches and manually examine them for potentially false matches. We need to eliminate the state abbreviation from the end of those records that have one because the 2006 records do not have it. We can substitute a blank followed by 2 letters occurring at the end of the string with an empty string, i.e.
+
+```
+gsub("[[:blank:]][a-z]{2}$", "", home)
+```
+
+This may result in matches that are too liberal, e.g. matching Springfield IL and Springfield MA. We leave it as an exercise to determine how to limit the matches to those where the entries have the same hometown and to assess whether this additional restriction should be added to the matching process.
+
+Here, we consider a less strict matching where we match only those records that have the same values for the state of residence. To do this, we create a new variable that holds the 2 letter abbreviation for the state. We return to work with `men_df_agecat` because the data structure is simpler and we maintain consistency. We extract the last 2 characters from each home string. This is the state, if it is present. We know that in 2006, the state was not present so we set these to `NA`. For athletes who come from outside the US, we pick up the last two letters of either the country or province, but these should not dramatically affect our matches.
+
+We first determine how many characters are in each value for home with
+
+```{r}
+home_len <- nchar(men_df_agecat$home)
+```
+
+Then we use it to extract the last two characters and add them back to our data frame with
+
+```{r}
+men_df_agecat <- men_df_agecat %>% 
+  mutate(state = str_sub(home, start = home_len - 1, end = home_len))
+```
+
+And, we set the 2006 values to `NA`:
+
+```{r}
+men_df_agecat$state[men_df_agecat$year == 2006] <- NA
+```
+
+Next, we recreate the new `id` so that it includes `state`. We do this with
+
+```{r}
+men_df_agecat <- men_df_agecat %>% 
+  mutate(id = paste(name, yob, state, sep = '_'))
+```
+
+Then, we again select those `id`s that occur at least 8 times with
+
+```{r}
+races <- men_df_agecat %>% count(id)
+races8 <- races %>% filter(n >= 8) %>% .$id
+men8 <- men_df_agecat %>% filter(id %in% races8) %>% arrange(id)
+men8L <- men8 %>% group_by(id) %>% nest() %>% .$data
+names(men8L) <- races8
+```
+
+In the next section we work solely with the list structure.
+
+This addition to the runner id further redues the number of runners who havea completed 8 races, i.e.,
+
+```{r}
+length(races8)
+```
+
+We now have 306 athletes who have the same name, year of birth, and state and who have run in 8 of the 14 races. We carry on with this set of matches we have obtained thus far, and in the next section, we examine how each runner's performance changes as he grows older.

@@ -17,7 +17,7 @@
 
 <meta name="author" content="John Ensley" />
 
-<meta name="date" content="2017-10-21" />
+<meta name="date" content="2017-10-23" />
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -89,8 +89,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
 <li><a href="scraping.html#scraping"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
 <li><a href="reading.html#reading"><span class="toc-section-number">3</span> Reading Tables of Race Results into R</a></li>
-<li><a href="data-cleaning-and-reformatting-variables.html#data-cleaning-and-reformatting-variables"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
+<li><a href="cleaning.html#cleaning"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
 <li><a href="exploring.html#exploring"><span class="toc-section-number">5</span> Exploring the Run Time for All Male Runners</a></li>
+<li><a href="individuals.html#individuals"><span class="toc-section-number">6</span> Constructing a Record for an Individual Runner across Years</a></li>
+<li><a href="modeling-the-change-in-running-time-for-individuals.html#modeling-the-change-in-running-time-for-individuals"><span class="toc-section-number">7</span> Modeling the Change in Running Time for Individuals</a></li>
+<li><a href="exercises.html#exercises"><span class="toc-section-number">8</span> Exercises</a></li>
 </ul>
 </div>
 </div>
@@ -208,12 +211,223 @@ Figure 5.5: Residual Plot from Fitting a Simple Linear Model of Performance to A
 <p>and we make predictions for all ages ranging from 20 to 80 with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">age20to80 &lt;-<span class="st"> </span><span class="dv">20</span><span class="op">:</span><span class="dv">80</span>
 men_res_lo_pr &lt;-<span class="st"> </span><span class="kw">predict</span>(men_res_lo, <span class="kw">data.frame</span>(<span class="dt">age =</span> age20to80))</code></pre></div>
-<p>The curve appears in Figure <a href="#fig:piecewise-fits"><strong>??</strong></a>.</p>
+<p>The curve appears in Figure <a href="exploring.html#fig:piecewise-fits">5.6</a>.</p>
+<p>Next we fit a piecewise linear model, which consists of several connected line segments. This is similar to the idea of the locally smoothed curve from <code>loess()</code> in that it allows us to bend the line at certain points to better fit the data. The difference is that the fit must be linear between the hinges. We place hinges at 30, 40, 50, and 60 and thus allow the slope of the line to change at these decade markers. The fitted “curve” appears in Figure <a href="exploring.html#fig:piecewise-fits">5.6</a>.</p>
+<p>How do we fit such a model to our data? Before we fit the full piecewise model, we consider a simpler model with one hinge at 50. We first create an <code>over50</code> variable that takes on the value 0 for ages 50 and under and otherwise holds the number of years over 50, e.g. 1 for someone who is 51, 2 for someone who is 52, and so on. If our fit is <span class="math inline">\(a + b \times \textrm{age} + c \times \textrm{over50}\)</span> then for an age below 50 this is simply <span class="math inline">\(a + b \times \textrm{age}\)</span> and for an age over 50 it is equivalent to <span class="math inline">\((a - 50c) + (b + c) \textrm{age}\)</span>. We see that the coefficient <span class="math inline">\(c\)</span> is the change in the slope from below 50 to above 50, and the intercept makes the line segments connect.</p>
+<p>Our first task then is to create this over50 variable. We use the <code>pmax()</code> function, which performs an element-wise or “parallel” maximum. We find the maximum of each element of <code>men_df$age - 50</code> and 0 with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">over50 &lt;-<span class="st"> </span><span class="kw">pmax</span>(<span class="dv">0</span>, men_df_agecat<span class="op">$</span>age <span class="op">-</span><span class="st"> </span><span class="dv">50</span>)</code></pre></div>
+<p>We then fit this augmented model as follows.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_over50 &lt;-<span class="st"> </span><span class="kw">lm</span>(time <span class="op">~</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>over50, <span class="dt">data =</span> men_df_agecat)
+<span class="kw">summary</span>(lm_over50)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = time ~ age + over50, data = men_df_agecat)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -40.265 -10.098  -0.882   9.061  79.043 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 82.754071   0.265035  312.24   &lt;2e-16 ***
+## age          0.105720   0.007147   14.79   &lt;2e-16 ***
+## over50       0.563573   0.023367   24.12   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 14.71 on 69804 degrees of freedom
+## Multiple R-squared:  0.03453,    Adjusted R-squared:  0.0345 
+## F-statistic:  1248 on 2 and 69804 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>Now the slope of the line for those under 50 is less steep than in our original simple linear model, and for ages over 50, the model indicates the average man slows by 0.67 minutes, which is an additional 0.56 minutes a year compared to those under fifty.</p>
+<p>We can create the <code>over30</code>, <code>over40</code>, etc. variables as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">decades &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">30</span>, <span class="dv">60</span>, <span class="dt">by =</span> <span class="dv">10</span>)
+over_age &lt;-<span class="st"> </span><span class="kw">map_dfc</span>(decades, <span class="cf">function</span>(x) {
+  name &lt;-<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&#39;over&#39;</span>, x)
+  df &lt;-<span class="st"> </span><span class="kw">data_frame</span>(<span class="kw">pmax</span>(<span class="dv">0</span>, men_df_agecat<span class="op">$</span>age <span class="op">-</span><span class="st"> </span>x))
+  <span class="kw">names</span>(df) &lt;-<span class="st"> </span>name
+  df
+})
+<span class="kw">tail</span>(over_age)</code></pre></div>
+<pre><code>## # A tibble: 6 x 4
+##   over30 over40 over50 over60
+##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1     36     26     16      6
+## 2     11      1      0      0
+## 3      9      0      0      0
+## 4     26     16      6      0
+## 5      5      0      0      0
+## 6     18      8      0      0</code></pre>
+<p>Now that we have each of these variables, we can create the model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_piecewise &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">bind_cols</span>(over_age) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(time, age, <span class="kw">starts_with</span>(<span class="st">&#39;over&#39;</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">lm</span>(time <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> .)
+<span class="kw">summary</span>(lm_piecewise)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = time ~ ., data = .)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -40.921 -10.119  -0.885   9.023  78.965 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 74.228651   0.915244  81.103  &lt; 2e-16 ***
+## age          0.424283   0.033207  12.777  &lt; 2e-16 ***
+## over30      -0.477006   0.047778  -9.984  &lt; 2e-16 ***
+## over40       0.221560   0.040666   5.448  5.1e-08 ***
+## over50       0.494507   0.052932   9.342  &lt; 2e-16 ***
+## over60      -0.004667   0.077637  -0.060    0.952    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 14.7 on 69801 degrees of freedom
+## Multiple R-squared:  0.03593,    Adjusted R-squared:  0.03586 
+## F-statistic: 520.2 on 5 and 69801 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>This model has an interpretation similar to the model with just <code>age</code> and <code>over50</code>. That is, the coefficient for, say, <code>over40</code> is the change in the slope for ages in (30, 40] to ages in (40, 50].</p>
+<p>Notice that the coefficient for <code>over60</code> is essentially 0, meaning that those over 60 do not slow down any faster than those in their fifties, i.e. about 0.494 minutes more per year for each year over 50 for a total of about 0.66 minutes for the 10-mile race per year.</p>
+<p>How do we plot this piecewise linear function that we have fitted? As with the loess curve, we can use <code>predict()</code> to provide fitted values for each age value from 20 to 80. However, we need to provide <code>predict()</code> with all of the covariates used in making the fit, i.e., <code>age</code>, <code>over30</code>, <code>over40</code>, <code>over50</code>, and <code>over60</code>. We can create a data frame of these covariates just as we did for the full data set as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">over_age_df &lt;-<span class="st"> </span><span class="kw">map_dfc</span>(decades, <span class="cf">function</span>(x) {
+  name &lt;-<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&#39;over&#39;</span>, x)
+  df &lt;-<span class="st"> </span><span class="kw">data_frame</span>(<span class="kw">pmax</span>(<span class="dv">0</span>, age20to80 <span class="op">-</span><span class="st"> </span>x))
+  <span class="kw">names</span>(df) &lt;-<span class="st"> </span>name
+  df
+}) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">bind_cols</span>(<span class="dt">age =</span> age20to80, .)
+<span class="kw">tail</span>(over_age_df)</code></pre></div>
+<pre><code>## # A tibble: 6 x 5
+##     age over30 over40 over50 over60
+##   &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1    75     45     35     25     15
+## 2    76     46     36     26     16
+## 3    77     47     37     27     17
+## 4    78     48     38     28     18
+## 5    79     49     39     29     19
+## 6    80     50     40     30     20</code></pre>
+<p>Then we call <code>predict()</code> passing it the <code>lm</code> object, i.e. <code>lm_piecewise</code>, with the details of the fit and also the covariates to use to make the predictions, i.e. <code>over_age_df</code>. That is, we call <code>predict()</code> with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">over_age_df &lt;-<span class="st"> </span>over_age_df <span class="op">%&gt;%</span><span class="st"> </span>modelr<span class="op">::</span><span class="kw">add_predictions</span>(lm_piecewise)</code></pre></div>
+<p>We plot this fitted piecewise linear function and the <code>loess</code> curve with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">over_age_df <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">loess =</span> men_res_lo_pr) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">gather</span>(type, value, pred, loess) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="kw">ggplot</span>(<span class="kw">aes</span>(age, value, <span class="dt">color =</span> type)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_color_few</span>(<span class="dt">name =</span> <span class="st">&#39;&#39;</span>, <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&#39;loess&#39;</span>, <span class="st">&#39;piecewise&#39;</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&#39;Predicted race times&#39;</span>, <span class="dt">x =</span> <span class="st">&#39;Age (years)&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Time (minutes)&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:piecewise-fits"></span>
+<p class="caption marginnote shownote">
+Figure 5.6: Piecewise Linear and Loess Curves Fitted to Run Time vs. Age. Here we have plotted the fitted curves from <code>loess()</code> and a piecewise linear model with hinges at 30, 40, 50, and 60. These curves follow each other quite closely. However, there appears to be more curvature in the over 50 loess fit that is not captured in the piecewise linear fit.
+</p>
+<img src="_main_files/figure-html/piecewise-fits-1.png" alt="Piecewise Linear and Loess Curves Fitted to Run Time vs. Age. Here we have plotted the fitted curves from `loess()` and a piecewise linear model with hinges at 30, 40, 50, and 60. These curves follow each other quite closely. However, there appears to be more curvature in the over 50 loess fit that is not captured in the piecewise linear fit." width="672"  />
+</div>
+<p>The two fitted curves appear in Figure <a href="exploring.html#fig:piecewise-fits">5.6</a>. We see that they follow each other quite closely. The main deviation is in the over 70 group. We did not include a hinge at 70 so our fitted model is unable to capture the sharper increase for those over 70. We may want to consider adding this additional hinge to our model to see if it improves the fit. It may seem that we have made great progress in modeling the average performance, but we must interpret these results with care. For example, suppose, as seems likely, that younger runners who are slow tend to drop out of racing as they age so older runners who do participate are those who tend to be faster. This can bias our estimate of how running speed changes with age. Additionally, these data consist of 14 cross-sectional snapshots of runners. We might ask ourselves whether or not the composition of the participants has changed over this time period. These concerns are the topics of the next two sections.</p>
+</div>
+<div id="cross-sectional-data-and-covariates" class="section level2">
+<h2><span class="header-section-number">5.3</span> Cross-Sectional Data and Covariates</h2>
+<p>In our earlier analysis, we examined the average performance for runners of different ages. That is, we looked at average performance for, e.g., 30-39 year olds and 40-49 year olds in the Cherry Blossom road race. However, we have not seen how a runner’s performance changes as he or she ages. These two groups (30-39 and 40-49 year olds) are composed of different people and if these groups of people differ from each other in some significant ways, e.g., those in their 30s are more likely to be world class runners and those in their 40s are more likely to be local amateur athletes, then we might be misled by comparing these two group’s average performances. To further complicate the matter, we have data from 14 different races so we are also averaging across the participants in these different races. We expect the average performances to be the same across the years. However, each year we have a self-selected group of participants, and we might wonder whether the composition of the participants has changed over the years. If it has, that could further complicate inference.</p>
+<p>We know that the Cherry Blossom 10-mile run has been increasingly popular. Figure <a href="exploring.html#fig:runner-count">5.7</a> indicates that the number of male runners has more than doubled over the 14 years. It seems reasonable to question if the demographics of the participants have changed over this time period.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="kw">factor</span>(year))) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">width =</span> <span class="fl">0.6</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Year&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Number of Runners&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:runner-count"></span>
+<p class="caption marginnote shownote">
+Figure 5.7: Line Plot of the Number of Male Runners by Year. This plot shows that the number of male runners in the Cherry Blossom 10-mile race has more than doubled from 1999 to 2012.
+</p>
+<img src="_main_files/figure-html/runner-count-1.png" alt="Line Plot of the Number of Male Runners by Year. This plot shows that the number of male runners in the Cherry Blossom 10-mile race has more than doubled from 1999 to 2012." width="672"  />
+</div>
+<p>Historically, the race was used as a preparation for the Boston Marathon. The fastest runners in the Cherry Blossom primarily come from Ethiopia, Kenya, and Tanzania. And, their times are within a minute or two of the world record of 44:24 set in 2005 by Haile Gebrselassie from Ethiopia, who was 32 at the time (see <a href="http://inglog.com/tools/world-records/" class="uri">http://inglog.com/tools/world-records/</a>). Professional runners continue to compete in the Cherry Blossom road race.</p>
+<p>Let’s compare the distribution of performance for the earliest and latest years, i.e., the 1999 and 2012 races. We see below that while the fastest man has gotten faster from 1999 to 2012, the quartiles of the 2012 distribution are each about 3 minutes slower compared to 1999:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(time) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">summary</span>()</code></pre></div>
+<pre><code>##       time       
+##  Min.   : 46.98  
+##  1st Qu.: 74.82  
+##  Median : 84.29  
+##  Mean   : 84.35  
+##  3rd Qu.: 93.06  
+##  Max.   :170.83</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(year <span class="op">==</span><span class="st"> </span><span class="dv">2012</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(time) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">summary</span>()</code></pre></div>
+<pre><code>##       time       
+##  Min.   : 45.25  
+##  1st Qu.: 77.57  
+##  Median : 87.47  
+##  Mean   : 88.44  
+##  3rd Qu.: 97.78  
+##  Max.   :150.98</code></pre>
+<p>Could it be that the men competing in 2012 are older and therefore slower than their counterparts in 1999? We can compare the age distributions of the runners in the two races.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(year <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1999</span>, <span class="dv">2012</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, <span class="dt">color =</span> <span class="kw">factor</span>(year))) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="dt">stat =</span> <span class="st">&#39;density&#39;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_color_few</span>(<span class="dt">name =</span> <span class="st">&#39;Year&#39;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Age&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Density&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:density-twoyears"></span>
+<p class="caption marginnote shownote">
+Figure 5.8: Density Curves for the Age of Male Runners in 1999 and 2012. These two density curves have quite different shapes. The 1999 male runners have a broad, nearly flat mode where they are roughly evenly distributed in age from 28 to 45. In contrast, the 2012 runners are younger with a sharper peak just under 30 years and a skew right distribution.
+</p>
+<img src="_main_files/figure-html/density-twoyears-1.png" alt="Density Curves for the Age of Male Runners in 1999 and 2012. These two density curves have quite different shapes. The 1999 male runners have a broad, nearly flat mode where they are roughly evenly distributed in age from 28 to 45. In contrast, the 2012 runners are younger with a sharper peak just under 30 years and a skew right distribution." width="672"  />
+</div>
+<p>The density curves in Figure <a href="exploring.html#fig:density-twoyears">5.8</a> are surprising. The males in 2012 are not older. In fact, the opposite is the case. There are many more younger men in 2012 in comparison to 1999, as evidenced by the sharp peak in the 2012 distribution at about 30. We can also compare these two distributions with a quantile-quantile plot (see Figure <a href="#fig:age-qq"><strong>??</strong></a>). The difference in performance between 1999 and 2012 is more subtle than having an aging population of runners. We need to control the covariates, age and year, simultaneously when we analyze race performance.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pts &lt;-<span class="st"> </span><span class="kw">qqplot</span>(men_df_agecat<span class="op">$</span>age[men_df_agecat<span class="op">$</span>year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>],
+              men_df_agecat<span class="op">$</span>age[men_df_agecat<span class="op">$</span>year <span class="op">==</span><span class="st"> </span><span class="dv">2012</span>],
+              <span class="dt">plot.it =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">as_data_frame</span>()
+pts <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(x, y)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_point</span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_abline</span>(<span class="dt">slope =</span> <span class="dv">1</span>, <span class="dt">intercept =</span> <span class="dv">0</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Age in 1999&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Age in 2012&#39;</span>)</code></pre></div>
+<p><img src="_main_files/figure-html/age-qq-1.png" width="672"  /></p>
+<p>In the previous chapter, we saw how the average performance was flat for runners in their 30s and rose slightly in the 40s and more sharply in the 50s and 60s. We make separate smooth curves of time versus age for the 1999 and 2012 runners and plot them together as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(year <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1999</span>, <span class="dv">2012</span>)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, time, <span class="dt">color =</span> <span class="kw">factor</span>(year))) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> <span class="st">&#39;loess&#39;</span>, <span class="dt">se =</span> <span class="ot">FALSE</span>, <span class="dt">fullrange =</span> <span class="ot">TRUE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">scale_color_few</span>(<span class="dt">name =</span> <span class="st">&#39;Year&#39;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">xlim</span>(<span class="kw">c</span>(<span class="dv">15</span>, <span class="dv">80</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Age&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Time (minutes)&#39;</span>)
+p</code></pre></div>
+<pre><code>## Warning: Removed 1 rows containing non-finite values (stat_smooth).</code></pre>
+<pre><code>## Warning: Removed 4 rows containing missing values (geom_smooth).</code></pre>
+<div class="figure"><span id="fig:loess-twoyears"></span>
+<p class="caption marginnote shownote">
+Figure 5.9: Loess Curves Fit to Performance for 1999 and 2012 Male Runners. This loess fit of run time to age for 2012 male runners sits above the fit for 1999 male runners. The gap between these curves is about 5 minutes for most years. The exception is in the late 40s to early 60s where the curves are within 2–3 minutes of each other. Both curves have a similar shape.
+</p>
+<img src="_main_files/figure-html/loess-twoyears-1.png" alt="Loess Curves Fit to Performance for 1999 and 2012 Male Runners. This loess fit of run time to age for 2012 male runners sits above the fit for 1999 male runners. The gap between these curves is about 5 minutes for most years. The exception is in the late 40s to early 60s where the curves are within 2–3 minutes of each other. Both curves have a similar shape." width="672"  />
+</div>
+<p>We see in Figure <a href="exploring.html#fig:loess-twoyears">5.9</a> that the two curves are similar in shape but the curve for 2012 is higher than the 1999 curve. There appears to be a consistent difference between these two groups of runners. Figure <a href="exploring.html#fig:loess-difference">5.10</a> shows the difference in predicted run times for these two curves. This difference narrows to 2 minutes for men in their 50s and gradually widens for men in their 60s, 70s, and 80s from 2.5 to 8.5 minutes. We leave it as an exercise to compare the run time age relationship for all 14 years of data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lo_pr_<span class="dv">99</span> &lt;-<span class="st"> </span><span class="kw">predict</span>(<span class="kw">loess</span>(time <span class="op">~</span><span class="st"> </span>age, 
+                          <span class="dt">data =</span> men_df_agecat, 
+                          <span class="dt">subset =</span> men_df_agecat<span class="op">$</span>year <span class="op">==</span><span class="st"> </span><span class="dv">1999</span>),
+                    <span class="kw">data_frame</span>(<span class="dt">age =</span> age20to80))
+lo_pr_<span class="dv">12</span> &lt;-<span class="st"> </span><span class="kw">predict</span>(<span class="kw">loess</span>(time <span class="op">~</span><span class="st"> </span>age, 
+                          <span class="dt">data =</span> men_df_agecat, 
+                          <span class="dt">subset =</span> men_df_agecat<span class="op">$</span>year <span class="op">==</span><span class="st"> </span><span class="dv">2012</span>),
+                    <span class="kw">data_frame</span>(<span class="dt">age =</span> age20to80))
+<span class="kw">data_frame</span>(<span class="dt">age =</span> age20to80, <span class="dt">diff =</span> lo_pr_<span class="dv">12</span> <span class="op">-</span><span class="st"> </span>lo_pr_<span class="dv">99</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(age, diff)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_line</span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Age&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Difference in Fitted Curves (minutes)&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:loess-difference"></span>
+<p class="caption marginnote shownote">
+Figure 5.10: Difference between Loess Curves. This line plot shows the difference between the predicted run time for 2012 and 1999 male runners.
+</p>
+<img src="_main_files/figure-html/loess-difference-1.png" alt="Difference between Loess Curves. This line plot shows the difference between the predicted run time for 2012 and 1999 male runners." width="672"  />
+</div>
+<p>We mention one last idea for comparing these two distributions of runners, and we leave it to the exercises to carry out this comparison. In track, there is a performance standard called age grading that measures an individual’s performance based on his or her age. It normalizes the individual’s run time by the world record for that distance for that age group. Since the fastest runners in the Cherry Blossom road race perform close to the world record, we might use the fastest runner in each age category to normalize the times. To minimize the year-to-year fluctuations, we can smooth the fastest times and use these smoothed times to normalize each runner’s time. When we do this, we find the age graded performances roughly follow the Normal distribution. However, the 1999 runners tend to be better than their 2012 counterparts as evidenced by the peak at 1.4 rather than 1.5 and a smaller IQR.</p>
+<p>The run time distribution appears to have changed over the years, and this points out the main issue with cross-sectional studies. However, there is an advantage to having 14 years’ worth of race results. It is possible that some runners have participated in the race over several years and we can study how each runner’s performance changes as he or she grows older. In order to do this, we need to connect runners across the years.</p>
 
 </div>
 </div>
 <p style="text-align: center;">
-<a href="data-cleaning-and-reformatting-variables.html"><button class="btn btn-default">Previous</button></a>
+<a href="cleaning.html"><button class="btn btn-default">Previous</button></a>
+<a href="individuals.html"><button class="btn btn-default">Next</button></a>
 </p>
 </div>
 </div>

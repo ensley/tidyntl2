@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Modeling Runners’ Times in the Cherry Blossom Race" />
+<meta property="og:type" content="book" />
+
+
+
+
+
+<meta name="author" content="John Ensley" />
+
+<meta name="date" content="2017-10-23" />
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+
+<meta name="description" content="Modeling Runners’ Times in the Cherry Blossom Race">
+
+<title>Modeling Runners’ Times in the Cherry Blossom Race</title>
+
+<link href="libs/tufte-css/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#preface">Preface</a></li>
+<li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="scraping.html#scraping"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
+<li><a href="reading.html#reading"><span class="toc-section-number">3</span> Reading Tables of Race Results into R</a></li>
+<li><a href="cleaning.html#cleaning"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
+<li><a href="exploring.html#exploring"><span class="toc-section-number">5</span> Exploring the Run Time for All Male Runners</a></li>
+<li><a href="individuals.html#individuals"><span class="toc-section-number">6</span> Constructing a Record for an Individual Runner across Years</a></li>
+<li><a href="modeling-the-change-in-running-time-for-individuals.html#modeling-the-change-in-running-time-for-individuals"><span class="toc-section-number">7</span> Modeling the Change in Running Time for Individuals</a></li>
+<li><a href="exercises.html#exercises"><span class="toc-section-number">8</span> Exercises</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="individuals" class="section level1">
+<h1><span class="header-section-number">6</span> Constructing a Record for an Individual Runner across Years</h1>
+<p>We want to match records from runners who have participated in more than one Cherry Blossom run. The race results do not have unique identifiers for each person so we need to construct these from the information we have on each race entrant. Ideally we use all of the information, i.e. the runner’s name, home, age, race time, and the year of the race. However, if this information is reported inconsistently from one year to the next, then this can reduct the number of matches. On the other hand, even using all of this information we may be incorrectly matching records from two different athletes. Whatever approach we devise will not be completely accurate, and the purpose of this section is to investigate several possibilities and settle on one that we think is reasonable.</p>
+<p>We consider the following questions:</p>
+<ul>
+<li>How many entrants are there over the 14 years?</li>
+<li>How many unique names are there among these entrants?</li>
+<li>How many names appear twice, 3 times, 4 times, etc. and what name occurs most often?</li>
+<li>How often does a name appear more than once in a year?</li>
+</ul>
+<p>Answering these questions gives us a sense of the magnitude of the matching problem. Additionally, we consider how to improve the matching by cleaning the <code>name</code> and <code>home</code> values. <em>The book describes trimming white space and fixing inconsistent capitalization here. We have already taken care of that in Chapter <a href="cleaning.html#cleaning">4</a>.</em></p>
+<p>Now we can begin to answer the questions about the uniqueness of the names. We do this by examining summary statistics and sets of records.</p>
+<p>How many entrants are there over the 14 races? We use <code>length()</code> to find out:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(men_df_agecat<span class="op">$</span>name)</code></pre></div>
+<pre><code>## [1] 69807</code></pre>
+<p>Recall, we have dropped those records with a run time under 30 minutes, and age under 16.</p>
+<p>How many unique names are there?</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(<span class="kw">unique</span>(men_df_agecat<span class="op">$</span>name))</code></pre></div>
+<pre><code>## [1] 39202</code></pre>
+<p>How many names appear once, twice, etc.? We can determine this by two calls to <code>table()</code>, i.e.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(<span class="kw">table</span>(men_df_agecat<span class="op">$</span>name))</code></pre></div>
+<pre><code>## 
+##     1     2     3     4     5     6     7     8     9    10    11    12 
+## 25490  6863  3029  1537   877   509   310   200   136    89    56    39 
+##    13    14    15    16    17    18    20    33 
+##    36    17     7     2     1     2     1     1</code></pre>
+<p>What does this table tell us? We see that over 6000 names appear 2 times throughout the 14 races. One name appears 33 times, and we know this name must correspond to at least 3 people because we have only 14 years of race results.</p>
+<p>Which name appears 30 times? We can find that with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(<span class="kw">sort</span>(<span class="kw">table</span>(men_df_agecat<span class="op">$</span>name), <span class="dt">decreasing =</span> <span class="ot">TRUE</span>), <span class="dv">1</span>)</code></pre></div>
+<pre><code>## Michael Smith 
+##            33</code></pre>
+<p>Let’s examine other information about these 33 Michael Smiths. We extract them from our data frame with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">msmith &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(name <span class="op">==</span><span class="st"> &#39;Michael Smith&#39;</span>)</code></pre></div>
+<p>The hometowns include</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">msmith <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">count</span>(home) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">arrange</span>(<span class="kw">desc</span>(n)) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">head</span>()</code></pre></div>
+<pre><code>## # A tibble: 6 x 2
+##             home     n
+##            &lt;chr&gt; &lt;int&gt;
+## 1   Arlington VA     6
+## 2  Washington DC     6
+## 3   Annapolis MD     3
+## 4 Chevy Chase MD     3
+## 5   Annandale VA     2
+## 6    Bethesda MD     2</code></pre>
+<p>Thinking ahead, we might ask: can we do more cleaning to potentially improve the matching? We have already made the capitalization more consistent. Additionally, we can remove punctuation such as a period after someone’s middle initial and any stray commas. We do this in one call to <code>gsub()</code> with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">name =</span> <span class="kw">str_replace_all</span>(name, <span class="st">&#39;[,.]&#39;</span>, <span class="st">&#39;&#39;</span>))</code></pre></div>
+<p>With so many duplicate names, let’s figure out how many times a name appears in the same year. We can create a table of year-name combinations with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tab_name_yr &lt;-<span class="st"> </span><span class="kw">table</span>(men_df_agecat<span class="op">$</span>year, men_df_agecat<span class="op">$</span>name)</code></pre></div>
+<p>and then call <code>max()</code> to find the cell in the table with the greatest count, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">max</span>(tab_name_yr)</code></pre></div>
+<pre><code>## [1] 5</code></pre>
+<p>Is this Michael Smith again? It takes a bit of work to find the name associated with this maximum. The table saved in <code>tab_name_yr</code> is of class <code>table</code>, which we see is a numeric vector with 3 attributes, <code>dim</code>, <code>dimname</code>, and <code>class</code>. Calls to <code>class()</code>, <code>mode()</code>, and <code>attributes()</code> help figure this out, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">class</span>(tab_name_yr)</code></pre></div>
+<pre><code>## [1] &quot;table&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">mode</span>(tab_name_yr)</code></pre></div>
+<pre><code>## [1] &quot;numeric&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(<span class="kw">attributes</span>(tab_name_yr))</code></pre></div>
+<pre><code>## [1] &quot;dim&quot;      &quot;dimnames&quot; &quot;class&quot;</code></pre>
+<p>There are several implications of this data structure. First, some matrix functions work on a <code>table</code>, e.g. we can call <code>dim()</code> and <code>colnames()</code> and find</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(tab_name_yr)</code></pre></div>
+<pre><code>## [1]    14 39138</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(<span class="kw">colnames</span>(tab_name_yr), <span class="dv">3</span>)</code></pre></div>
+<pre><code>## [1] &quot;8Illiam Maury&quot; &quot;Aakar Jain&quot;    &quot;Aakash Bhatt&quot;</code></pre>
+<p>Notice we have uncovered another piece of messy data! To find out which cell has a count of 5, we can use <code>which()</code>, but to find the row and column location, we need to include the <code>arr.ind</code> argument in our call. That is,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">idx_max &lt;-<span class="st"> </span><span class="kw">which</span>(tab_name_yr <span class="op">==</span><span class="st"> </span><span class="kw">max</span>(tab_name_yr), <span class="dt">arr.ind =</span> <span class="ot">TRUE</span>)
+idx_max</code></pre></div>
+<pre><code>##      row   col
+## 2012  14 25458</code></pre>
+<p>Finally, we locate the name(s) with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(tab_name_yr)[idx_max[<span class="dv">2</span>]]</code></pre></div>
+<pre><code>## [1] &quot;Michael Brown&quot;</code></pre>
+<p>It’s Michael Brown, not Michael Smith!</p>
+<p>We can also derive an approximation to year of birth because we have the runner’s age and the year of the race. The difference between these two is an approximation to age because the race is held on the first Sunday in April every year. Those runners who have a birthday in the first 7 days of April may have their age reported inconsistently from one race year to the next. What fraction of the records can we expect to have this problem? We create a new variable <code>yob</code> in our data frame with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">yob =</span> year <span class="op">-</span><span class="st"> </span>age)</code></pre></div>
+<p>Let’s look closer at the values for these new and cleaned variables for the Michael Browns in our data frame. We do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(name <span class="op">==</span><span class="st"> &#39;Michael Brown&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">arrange</span>(yob) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(year, name, home, yob, time)</code></pre></div>
+<pre><code>## # A tibble: 18 x 5
+##     year          name           home   yob      time
+##    &lt;int&gt;         &lt;chr&gt;          &lt;chr&gt; &lt;dbl&gt;     &lt;dbl&gt;
+##  1  2000 Michael Brown      Tucson AZ  1939  96.88333
+##  2  2010 Michael Brown  North East MD  1953  92.26667
+##  3  2011 Michael Brown  North East MD  1953  85.95000
+##  4  2012 Michael Brown  North East MD  1953  88.43333
+##  5  2009 Michael Brown      Oakton VA  1957  99.73333
+##  6  2008 Michael Brown     Ashburn VA  1958  93.73333
+##  7  2009 Michael Brown     Ashburn VA  1958  88.56667
+##  8  2010 Michael Brown     Ashburn VA  1958  99.75000
+##  9  2012 Michael Brown      Reston VA  1958  89.95000
+## 10  2006 Michael Brown    Chevy Chase  1966  84.56667
+## 11  2010 Michael Brown Chevy Chase MD  1966  79.35000
+## 12  2012 Michael Brown Chevy Chase MD  1966  95.81667
+## 13  2004 Michael Brown  Berryville VA  1978  76.31667
+## 14  2008 Michael Brown   Arlington VA  1984  84.68333
+## 15  2010 Michael Brown    New York NY  1984 110.88333
+## 16  2011 Michael Brown   Arlington VA  1984  81.70000
+## 17  2012 Michael Brown   Arlington VA  1984  70.93333
+## 18  2012 Michael Brown     Clifton VA  1988  84.88333</code></pre>
+<p>What observations can we make about these various <code>Michael Brown</code> rows?</p>
+<ul>
+<li>The 3 entries for <code>Michael Brown</code> born in 1953 seem to be the same person because all have a hometown of <code>North East MD</code>. Additionally, the 3 race times are within 7 minutes of each other.</li>
+<li>The 4 entries for <code>Michael Brown</code> born in 1958 have race years of 2008, 2009, 2010, and 2012. The most recent entry lists Reston, VA for a hometown while the other 3 show Ashburn, VA. Do we have 1, 2, 3, or 4 different <code>Michael Brown</code>s here? The 2010 entrant ran the slowest of the 4 races by about 6 minutes and the other 3 times are closer. An internet search reveals that Reston and Ashburn are within 22 km of each other. It is conceivable that these 4 records belong to the same individual who moved from Ashburn to Reston between April 2010 and 2012. We can’t know for sure.</li>
+<li>Another 3 <code>Michael Brown</code> entries have 1966 for a birth year. All 3 list Chevy Chase as the hometown, except that for 2006, the state (MD) is not provided. When we examine more locations for other runners in 2006, we find that none of them list a state. These 3 <code>Michael Brown</code> records also have a range of 11 minutes for time with the middle year (2010) being the fastest. These records are likely for the same person, but we have uncovered an inconsistency in how home is reported for 2006 compared to the other years.</li>
+<li>Next, we have 4 records for <code>Michael Brown</code> born in 1984, with races in 2008, 2010, 2011, and 2012. Of these, the 2010 record seems to be a different person as his home is listed as New York, NY and his race time is 25 to 40 minutes slower than the other 3 records. The other 3 all have the same hometown of Arlington, VA. They also have increasingly better times with a 2008 time of 84 and a 2012 time of 71 minutes. It is not unreasonable to think that these 3 records belong to the same person who has been training and running faster as he ages. Again, we cannot know this for sure.</li>
+<li>Lastly, notice that the 5 <code>Michael Brown</code>s who registered for the 2012 race have different years of birth (1953, 1958, 1966, 1984, and 1988) and 5 different home towns. These are 5 different people.</li>
+</ul>
+<p>We summarize our various observations to make a first attempt to create an identifier for individuals. We might paste together the cleaned name and the derived year of birth. We do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">id =</span> <span class="kw">paste</span>(name, yob, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</code></pre></div>
+<p>We have ignored the information provided by the hometown and the run times and so have created the least restrictive identifier.</p>
+<p>Since our goal is to study how an athlete’s time changes with age, let’s focus on those IDs that appear in at least 8 races. To do this, we first determine how many times each <code>id</code> appears in <code>men_df_agecat</code> with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">races &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">count</span>(id)</code></pre></div>
+<p>Then we select those IDs that appear at least 8 times with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">races8 &lt;-<span class="st"> </span>races <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(n <span class="op">&gt;=</span><span class="st"> </span><span class="dv">8</span>) <span class="op">%&gt;%</span><span class="st"> </span>.<span class="op">$</span>id</code></pre></div>
+<p>and we subset <code>men_df_agecat</code> to select the entries belonging to these identifiers with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men8 &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(id <span class="op">%in%</span><span class="st"> </span>races8)</code></pre></div>
+<p>Finally, we organize the data frame so that entries with the same <code>id</code> are contiguous. This makes it easier to manually examine records, etc. We can do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men8 &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">arrange</span>(id)</code></pre></div>
+<p>An alternative organization for the data is to store them as a list with an element for each ID in <code>races8</code>. In this list, each elmeent is a dat frame containing only those results for the records with the same ID. We can create this list with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men8L &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(id) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nest</span>() <span class="op">%&gt;%</span><span class="st"> </span>.<span class="op">$</span>data
+<span class="kw">names</span>(men8L) &lt;-<span class="st"> </span>races8</code></pre></div>
+<p>Which data structure is preferable? That depends on what we want to do with the data. In the following we show how to accomplish a task using both approaches to help make a comparison between the two structures. In the next section, we find it easiest to work with the list of data frames as we often need to apply a function of multiple arguments to each runner’s entries.</p>
+<p>How many IDs do we have left?</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(<span class="kw">unique</span>(men8<span class="op">$</span>id))</code></pre></div>
+<pre><code>## [1] 480</code></pre>
+<p>This is the same as <code>length(men8L)</code>. We might also want to discard matches if the performance varies too much from year to year. How large a fluctuation would make us think that we have mistakenly connected two different people? Of course, we don’t want to bias our results by eliminating an individual whose run times vary a lot. Let’s look at a few records where the year-to-year difference in time exceeds, say, 20 minutes. We determine which satisfy this constraint with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">gap_time &lt;-<span class="st"> </span><span class="kw">map_lgl</span>(men8L, <span class="op">~</span><span class="st"> </span><span class="kw">any</span>(<span class="kw">abs</span>(<span class="kw">diff</span>(.<span class="op">$</span>time)) <span class="op">&gt;</span><span class="st"> </span><span class="dv">20</span>))</code></pre></div>
+<p>How many of these runners have gaps of more than 20 minutes?</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(gap_time)</code></pre></div>
+<pre><code>## [1] 49</code></pre>
+<p>Slightly reformatted displays of the first two of these athletes are</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">map</span>(men8L[gap_time][<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>], <span class="op">~</span><span class="st"> </span>.[ ,<span class="kw">c</span>(<span class="st">&#39;year&#39;</span>, <span class="st">&#39;home&#39;</span>, <span class="st">&#39;name&#39;</span>, <span class="st">&#39;yob&#39;</span>, <span class="st">&#39;time&#39;</span>)])</code></pre></div>
+<pre><code>## $`Abiy Zewde_1967`
+## # A tibble: 12 x 5
+##     year                 home       name   yob      time
+##    &lt;int&gt;                &lt;chr&gt;      &lt;chr&gt; &lt;dbl&gt;     &lt;dbl&gt;
+##  1  1999      Gaithersburg MD Abiy Zewde  1967  96.51667
+##  2  2000   Montgomery Vill MD Abiy Zewde  1967  96.63333
+##  3  2001   Montgomery Vill MD Abiy Zewde  1967  89.10000
+##  4  2002   Montgomery Vill MD Abiy Zewde  1967 123.00000
+##  5  2003      Gaithersburg MD Abiy Zewde  1967  97.68333
+##  6  2004   Montgomery Vill MD Abiy Zewde  1967 100.36667
+##  7  2006         Gaithersburg Abiy Zewde  1967 108.40000
+##  8  2008   Montgomery Vill MD Abiy Zewde  1967  98.78333
+##  9  2009 Montgomery Villag MD Abiy Zewde  1967  98.50000
+## 10  2010 Montgomery Villag MD Abiy Zewde  1967  99.91667
+## 11  2011 Montgomery Villag MD Abiy Zewde  1967 113.10000
+## 12  2012 Montgomery Villag MD Abiy Zewde  1967  84.88333
+## 
+## $`Adam Hughes_1978`
+## # A tibble: 8 x 5
+##    year          home        name   yob      time
+##   &lt;int&gt;         &lt;chr&gt;       &lt;chr&gt; &lt;dbl&gt;     &lt;dbl&gt;
+## 1  2005 Washington DC Adam Hughes  1978  80.38333
+## 2  2006    Washington Adam Hughes  1978  85.16667
+## 3  2007 Washington DC Adam Hughes  1978  77.78333
+## 4  2008 Washington DC Adam Hughes  1978  74.23333
+## 5  2009 Washington DC Adam Hughes  1978 108.06667
+## 6  2010 Washington DC Adam Hughes  1978 103.06667
+## 7  2011 Washington DC Adam Hughes  1978  77.11667
+## 8  2012 Washington DC Adam Hughes  1978  77.76667</code></pre>
+<p>The name <code>Abiy Zewde</code> seems unusual enough to most likely be the same person participating in 12 of the 14 races even though the hometown has changed over the years and the race results differ by nearly 40 minutes with one of the fastest times being the most recent when he was 45 years old.</p>
+<p>Do we want to further restrict our matching to those with the same hometown? This eliminates, e.g., the <code>Abiy Zewde</code> records, even though we’re quite certain the records all belong to the same individual. We could identify the mismatches and manually examine them for potentially false matches. We need to eliminate the state abbreviation from the end of those records that have one because the 2006 records do not have it. We can substitute a blank followed by 2 letters occurring at the end of the string with an empty string, i.e.</p>
+<pre><code>gsub(&quot;[[:blank:]][a-z]{2}$&quot;, &quot;&quot;, home)</code></pre>
+<p>This may result in matches that are too liberal, e.g. matching Springfield IL and Springfield MA. We leave it as an exercise to determine how to limit the matches to those where the entries have the same hometown and to assess whether this additional restriction should be added to the matching process.</p>
+<p>Here, we consider a less strict matching where we match only those records that have the same values for the state of residence. To do this, we create a new variable that holds the 2 letter abbreviation for the state. We return to work with <code>men_df_agecat</code> because the data structure is simpler and we maintain consistency. We extract the last 2 characters from each home string. This is the state, if it is present. We know that in 2006, the state was not present so we set these to <code>NA</code>. For athletes who come from outside the US, we pick up the last two letters of either the country or province, but these should not dramatically affect our matches.</p>
+<p>We first determine how many characters are in each value for home with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">home_len &lt;-<span class="st"> </span><span class="kw">nchar</span>(men_df_agecat<span class="op">$</span>home)</code></pre></div>
+<p>Then we use it to extract the last two characters and add them back to our data frame with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">state =</span> <span class="kw">str_sub</span>(home, <span class="dt">start =</span> home_len <span class="op">-</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">end =</span> home_len))</code></pre></div>
+<p>And, we set the 2006 values to <code>NA</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat<span class="op">$</span>state[men_df_agecat<span class="op">$</span>year <span class="op">==</span><span class="st"> </span><span class="dv">2006</span>] &lt;-<span class="st"> </span><span class="ot">NA</span></code></pre></div>
+<p>Next, we recreate the new <code>id</code> so that it includes <code>state</code>. We do this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men_df_agecat &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">id =</span> <span class="kw">paste</span>(name, yob, state, <span class="dt">sep =</span> <span class="st">&#39;_&#39;</span>))</code></pre></div>
+<p>Then, we again select those <code>id</code>s that occur at least 8 times with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">races &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">count</span>(id)
+races8 &lt;-<span class="st"> </span>races <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(n <span class="op">&gt;=</span><span class="st"> </span><span class="dv">8</span>) <span class="op">%&gt;%</span><span class="st"> </span>.<span class="op">$</span>id
+men8 &lt;-<span class="st"> </span>men_df_agecat <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(id <span class="op">%in%</span><span class="st"> </span>races8) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">arrange</span>(id)
+men8L &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(id) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">nest</span>() <span class="op">%&gt;%</span><span class="st"> </span>.<span class="op">$</span>data
+<span class="kw">names</span>(men8L) &lt;-<span class="st"> </span>races8</code></pre></div>
+<p>In the next section we work solely with the list structure.</p>
+<p>This addition to the runner id further redues the number of runners who havea completed 8 races, i.e.,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(races8)</code></pre></div>
+<pre><code>## [1] 306</code></pre>
+<p>We now have 306 athletes who have the same name, year of birth, and state and who have run in 8 of the 14 races. We carry on with this set of matches we have obtained thus far, and in the next section, we examine how each runner’s performance changes as he grows older.</p>
+
+</div>
+<p style="text-align: center;">
+<a href="exploring.html"><button class="btn btn-default">Previous</button></a>
+<a href="modeling-the-change-in-running-time-for-individuals.html"><button class="btn btn-default">Next</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

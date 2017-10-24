@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Modeling Runners’ Times in the Cherry Blossom Race" />
+<meta property="og:type" content="book" />
+
+
+
+
+
+<meta name="author" content="John Ensley" />
+
+<meta name="date" content="2017-10-23" />
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+
+<meta name="description" content="Modeling Runners’ Times in the Cherry Blossom Race">
+
+<title>Modeling Runners’ Times in the Cherry Blossom Race</title>
+
+<link href="libs/tufte-css/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#preface">Preface</a></li>
+<li><a href="introduction.html#introduction"><span class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="scraping.html#scraping"><span class="toc-section-number">2</span> Scraping Race Results from the Web</a></li>
+<li><a href="reading.html#reading"><span class="toc-section-number">3</span> Reading Tables of Race Results into R</a></li>
+<li><a href="cleaning.html#cleaning"><span class="toc-section-number">4</span> Data Cleaning and Reformatting Variables</a></li>
+<li><a href="exploring.html#exploring"><span class="toc-section-number">5</span> Exploring the Run Time for All Male Runners</a></li>
+<li><a href="individuals.html#individuals"><span class="toc-section-number">6</span> Constructing a Record for an Individual Runner across Years</a></li>
+<li><a href="modeling-the-change-in-running-time-for-individuals.html#modeling-the-change-in-running-time-for-individuals"><span class="toc-section-number">7</span> Modeling the Change in Running Time for Individuals</a></li>
+<li><a href="exercises.html#exercises"><span class="toc-section-number">8</span> Exercises</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="modeling-the-change-in-running-time-for-individuals" class="section level1">
+<h1><span class="header-section-number">7</span> Modeling the Change in Running Time for Individuals</h1>
+<p>The Cherry Blossom race results include recordings for athletes from 20 to 80 years old. However, we don’t have records for any one person that covers this 60-year span. That’s not possible because we have only 14 years of race results so we can at most observe a 20 year old until he turns 33 or an 80 year old when he was 67. This means when we examine the performance of an individual over time, we are looking at short time series that are at most 14 years long. To examine performance from 20 to 80 necessarily means that we rely on the cross-sectional aspect of the data, but there is information to be gleaned in these short time series.</p>
+<p>It’s reasonable to imagine that over a short period of time, say 8 to 10 years, a runner’s performance is roughly linear with age. (We saw this with the piecewise linear model for the cross-sectional data). We can make plots to ascertain if this is the case. We have over 300 runners to plot so to limit the effect of over plotting, we make several plots of different subsets of the data. We begin by dividing the runners into 9 groups to make 9 plots in a 3-by-3 grid. We assign roughly the same number of runners to each group with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men8 &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">group =</span> <span class="kw">group_indices</span>(., id) <span class="op">%%</span><span class="st"> </span><span class="dv">9</span> <span class="op">+</span><span class="st"> </span><span class="dv">1</span>)</code></pre></div>
+<p>and we can plot it with one call to <code>ggplot()</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(men8, <span class="kw">aes</span>(age, time, <span class="dt">color =</span> id)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="dt">show.legend =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">facet_wrap</span>( <span class="op">~</span><span class="st"> </span>group)</code></pre></div>
+<div class="figure"><span id="fig:time-trends"></span>
+<p class="caption marginnote shownote">
+Figure 7.1: Run Times for Multiple Races. These line plots show the times for male runners who completed at least 8 Cherry Blossom races. Each set of connected segments corresponds to the run times for one athlete. Looking at all line plots, we see a similar shape to the overall scatter plot, i.e., an upward curve with age. However, we can also see how an individual’s performance changes. For example, many middle-aged runners show a sharp increase in run time with age but that is not the case for all. Some of them improve and others change more slowly.
+</p>
+<img src="_main_files/figure-html/time-trends-1.png" alt="Run Times for Multiple Races. These line plots show the times for male runners who completed at least 8 Cherry Blossom races. Each set of connected segments corresponds to the run times for one athlete. Looking at all line plots, we see a similar shape to the overall scatter plot, i.e., an upward curve with age. However, we can also see how an individual’s performance changes. For example, many middle-aged runners show a sharp increase in run time with age but that is not the case for all. Some of them improve and others change more slowly." width="672"  />
+</div>
+<p>In Figure <a href="modeling-the-change-in-running-time-for-individuals.html#fig:time-trends">7.1</a> we see 9 line plots, each containing about 30 athletes. Some of the athletes fluctuate quite a bit, and we might want to revisit hte notion of dropping runners that may be the combination of two different people’s records because they fluctuate more than expected. We leave this as an exercise. Otherwise, fitting a line to each individual’s performance seems a reasonable approach.</p>
+<p>A longitudinal analysis of each individual runner implicitly controls for covariates that may influence performance, e.g. gender. One exception is the race condition in any given year – some years might be slow and some fast due to changes in the course or weather. However, it seems plausible that such an effect is uncorrelated with age and so amounts to measurement noise.</p>
+<p>Now that we have our list of runners, we wish to fit a line to each runner’s performance. The book writes a custom function to accomplish this for each runner, but this what the <code>broom</code> package was made for.</p>
+<p>First, let’s draw a plot with the fitted lines. As shown in Figure <a href="modeling-the-change-in-running-time-for-individuals.html#fig:linearfit-onegroup">7.2</a>, these line segments seem to capture each runner’s performance.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">men8 <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">filter</span>(group <span class="op">==</span><span class="st"> </span><span class="dv">9</span>) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="kw">ggplot</span>(<span class="kw">aes</span>(age, time, <span class="dt">color =</span> id)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="dt">show.legend =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="kw">aes</span>(<span class="dt">group =</span> id), 
+              <span class="dt">method =</span> <span class="st">&#39;lm&#39;</span>, 
+              <span class="dt">se =</span> <span class="ot">FALSE</span>, 
+              <span class="dt">color =</span> <span class="st">&#39;grey50&#39;</span>, 
+              <span class="dt">size =</span> <span class="fl">0.5</span>,
+              <span class="dt">linetype =</span> <span class="st">&#39;dashed&#39;</span>,
+              <span class="dt">show.legend =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">facet_wrap</span>( <span class="op">~</span><span class="st"> </span>group)</code></pre></div>
+<div class="figure"><span id="fig:linearfit-onegroup"></span>
+<p class="caption marginnote shownote">
+Figure 7.2: Linear Fits of Run Time to Age for Individual Runners. Here we have augmented the bottom-right line plot from earlier with the least squares fit of run time for each of the athletes. These are the 30 or so grey dashed line segments plotted on each of the individual runner’s times series.
+</p>
+<img src="_main_files/figure-html/linearfit-onegroup-1.png" alt="Linear Fits of Run Time to Age for Individual Runners. Here we have augmented the bottom-right line plot from earlier with the least squares fit of run time for each of the athletes. These are the 30 or so grey dashed line segments plotted on each of the individual runner’s times series." width="672"  />
+</div>
+<p>To examine the runner-to-runner variability, we fit lines to all 306 athletes with the following call.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">lm_coefs &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">group_by</span>(id) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">do</span>(<span class="dt">fit =</span> <span class="kw">lm</span>(time <span class="op">~</span><span class="st"> </span>age, <span class="dt">data =</span> .)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">tidy</span>(fit)
+
+long_coefs &lt;-<span class="st"> </span>men8 <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(id) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">med_age =</span> <span class="kw">median</span>(age)) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">coef =</span> lm_coefs<span class="op">$</span>estimate[lm_coefs<span class="op">$</span>term <span class="op">==</span><span class="st"> &#39;age&#39;</span>])</code></pre></div>
+<p>Now we have a single coefficient that represents the relationship between run time and age for each runner who ran at least 8 times (and who resided in the same state over those race years). This coefficient has units of minutes in run time for the 10-mile race per year. A positive coefficient means that the runner is slowing down by that number of minutes a year.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(long_coefs, <span class="kw">aes</span>(med_age, coef)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">size =</span> <span class="fl">0.7</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> <span class="st">&#39;lm&#39;</span>, <span class="dt">size =</span> <span class="fl">0.7</span>, <span class="dt">color =</span> <span class="st">&#39;darkgreen&#39;</span>, <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="dt">method =</span> <span class="st">&#39;loess&#39;</span>, <span class="dt">size =</span> <span class="fl">0.7</span>, <span class="dt">linetype =</span> <span class="st">&#39;dashed&#39;</span>, <span class="dt">se =</span> <span class="ot">FALSE</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> <span class="dv">0</span>, <span class="dt">color =</span> <span class="st">&#39;grey70&#39;</span>, <span class="dt">size =</span> <span class="fl">0.3</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&#39;Median age&#39;</span>, <span class="dt">y =</span> <span class="st">&#39;Coefficient (minutes per race / year)&#39;</span>)</code></pre></div>
+<div class="figure"><span id="fig:long-coefs"></span>
+<p class="caption marginnote shownote">
+Figure 7.3: Coefficients from Longitudinal Analysis of Athletes. This scatter plot displays the slope of the fitted line to each of the 300+ runners who competed in at least 8 Cherry Blossom road races. A negative coefficient indicates the runner is getting faster as he ages. The plot includes a least squares fitted line and a loess fitted curve. Notice that nearly all of the coefficients for those over 50 are positive. The typical size of this coefficient for a 50-year old is about one minute per year.
+</p>
+<img src="_main_files/figure-html/long-coefs-1.png" alt="Coefficients from Longitudinal Analysis of Athletes. This scatter plot displays the slope of the fitted line to each of the 300+ runners who competed in at least 8 Cherry Blossom road races. A negative coefficient indicates the runner is getting faster as he ages. The plot includes a least squares fitted line and a loess fitted curve. Notice that nearly all of the coefficients for those over 50 are positive. The typical size of this coefficient for a 50-year old is about one minute per year." width="672"  />
+</div>
+<p>We see in Figure <a href="modeling-the-change-in-running-time-for-individuals.html#fig:long-coefs">7.3</a> how these coefficients vary with age. There is plenty of individual variation in performance with a few in their 50s and 60s getting faster and many in their 30s slowing down. However, we also see a relationship between age and run time. There appears to be a positive linear trend in the coefficients. We fit this with</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">long_fit &lt;-<span class="st"> </span><span class="kw">lm</span>(coef <span class="op">~</span><span class="st"> </span>med_age, <span class="dt">data =</span> long_coefs)
+<span class="kw">summary</span>(long_fit)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = coef ~ med_age, data = long_coefs)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.4015 -0.6317 -0.0216  0.5673  3.3337 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -2.005340   0.308505  -6.500 3.28e-10 ***
+## med_age      0.055663   0.006176   9.013  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.009 on 304 degrees of freedom
+## Multiple R-squared:  0.2109, Adjusted R-squared:  0.2083 
+## F-statistic: 81.23 on 1 and 304 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>We have also plotted this fitted line along with a horizontal reference line at 0 and a smooth loess curve fit to the coefficients in Figure <a href="modeling-the-change-in-running-time-for-individuals.html#fig:long-coefs">7.3</a>. This graph suggests that, on average, performance improves for people who are younger than about 35. That is, the age coefficient is negative for ages under 30. The hypothetical “average” runner who is older than 35 slows down. By age 60, the typical runner slows by about 1.3 minutes per year, about twice as fast as indicated by the cross-sectional analysis.</p>
+
+</div>
+<p style="text-align: center;">
+<a href="individuals.html"><button class="btn btn-default">Previous</button></a>
+<a href="exercises.html"><button class="btn btn-default">Next</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

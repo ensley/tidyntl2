@@ -1,4 +1,4 @@
-# Data Cleaning and Reformatting Variables
+# Data Cleaning and Reformatting Variables {#cleaning}
 
 In this section, we consider how to convert the list of character matrices, `men_res_mat`, into an appropriate format for analysis. Currently, the data values are all character, which is not conducive to, e.g., finding the median age of the runners. However, we can easily reformat age into numeric values with the `as.numeric()` function. Do we want to turn the entire matrix into a numeric matrix? Not really. It doesn’t make sense to try to convert the runner’s name into a numeric value. For this reason, we want to create a data frame because it allows our variables to be different types. We have 6 variables: the runner’s name, home town, age, and 3 versions of time. As just mentioned, we want to convert age to a numeric and leave name as character. What about the other variables? We probably want to also keep hometown as character.
 
